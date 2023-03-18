@@ -1,4 +1,8 @@
-class AABB extends Sprite {
+import { Vector2 } from "../math/vector2.js";
+import { Sprite } from "./gameObject.js";
+import { log } from "../main.js";
+
+export class AABB extends Sprite {
   enabled;
 
   /**
@@ -14,7 +18,7 @@ class AABB extends Sprite {
   }
 }
 
-class CollisionObject extends Sprite {
+export class CollisionObject extends Sprite {
   _collisionMask = 0b1; // Same as 0b0000000001
   _collisionLayer = 0b1;
 
@@ -62,7 +66,7 @@ class CollisionObject extends Sprite {
   }
 }
 
-class Region extends CollisionObject {
+export class Region extends CollisionObject {
   _regionsInside = [];
 
   constructor(position, size, name) {
@@ -90,7 +94,7 @@ class Region extends CollisionObject {
   onRegionExit(region) {}
 }
 
-class RigidBody extends Region {
+export class RigidBody extends Region {
   constructor(position, size, name) {
     super(position, size, name);
   }
@@ -98,7 +102,7 @@ class RigidBody extends Region {
   onCollision(collision) {}
 }
 
-class StaticBody extends RigidBody {
+export class StaticBody extends RigidBody {
   _bounce = 0;
   _friction = 0.8;
 
@@ -125,7 +129,7 @@ class StaticBody extends RigidBody {
   }
 }
 
-class KinematicBody extends RigidBody {
+export class KinematicBody extends RigidBody {
   _lastSlideCollisions = [];
 
   constructor(position, size, name) {

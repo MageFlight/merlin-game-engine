@@ -1,4 +1,15 @@
-class TestGame extends GameState {
+import { Utils } from "../utils.js";
+import { GameState } from "../gameState.js";
+import { Vector2 } from "../math/vector2.js";
+import { PhysicsEngine } from "../physicsEngine/physics.js";
+import { StaticBody, KinematicBody, AABB } from "../gameObjects/physicsObjects.js";
+import { ImageTexture, TiledTexture } from "../resources/textures.js";
+import { keyboardHandler, log } from "../main.js";
+import { GameObjectTree } from "../gameObjects/gameObjectTree.js";
+import { ResourceLoader } from "../resources/resource.js";
+import { ColorRect, TextureRect } from "../gameObjects/cameraObjects.js";
+
+export class TestGame extends GameState {
   #objectTree = null;
   
   constructor() {
@@ -8,7 +19,7 @@ class TestGame extends GameState {
 
   async load() {
     const tex = await ImageTexture.createFromImage(await ResourceLoader.getImage('example/rightNormalV3.svg'));
-    const ground = await TiledTexture.createFromPaths(['example/rightNormalV3.svg'], Vector2.levelVector2(20, 2), Vector2.levelVector2(1, 1), -1, true, true);
+    const ground = await TiledTexture.createFromPaths(['example/rightNormalV3.svg'], new Vector2(1280, 128), new Vector2(64, 64), -1, true, true);
 
     console.log("ground: ", ground);
 
@@ -17,13 +28,13 @@ class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
 
-      new StaticBody(new Vector2(640, 600), Vector2.levelVector2(3, 5), 0, 0.8, "wall")
-        .addChild(new AABB(Vector2.zero(), Vector2.levelVector2(3, 5), true, "wallCollider"))
-        .addChild(new ColorRect(Vector2.zero(), Vector2.levelVector2(3, 5), "#ff0000", "wallTex")),
+      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0, 0.8, "wall")
+        .addChild(new AABB(Vector2.zero(), new Vector2(192, 320), true, "wallCollider"))
+        .addChild(new ColorRect(Vector2.zero(), new Vector2(192, 320), "#ff0000", "wallTex")),
 
-      new StaticBody(Vector2.levelPositionVector2(0, 2), Vector2.levelVector2(20, 2), 0, 0.8, "ground")
-        .addChild(new AABB(Vector2.zero(), Vector2.levelVector2(20, 2), true, "groundCollider"))
-        .addChild(new TextureRect(Vector2.zero(), Vector2.levelVector2(20, 2), ground, "groundTexture"))
+      new StaticBody(new Vector2(0, Utils.getGameSize().y - 128), new Vector2(1280, 128), 0, 0.8, "ground")
+        .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "groundCollider"))
+        .addChild(new TextureRect(Vector2.zero(), new Vector2(1280, 128), ground, "groundTexture"))
     ]);
   }
 

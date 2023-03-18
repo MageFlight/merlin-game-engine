@@ -1,4 +1,8 @@
-class Texture extends Resource {
+import { Vector2 } from "../math/vector2.js";
+import { Utils } from "../utils.js";
+import { Resource, ResourceLoader } from "./resource.js";
+
+export class Texture extends Resource {
   size;
 
   constructor(path, data) {
@@ -13,7 +17,7 @@ class Texture extends Resource {
   }
 }
 
-class ImageTexture extends Texture {
+export class ImageTexture extends Texture {
   constructor(data, size = null) {
     super(data.src, data);
 
@@ -31,7 +35,7 @@ class ImageTexture extends Texture {
   }
 }
 
-class TiledTexture extends Texture {
+export class TiledTexture extends Texture {
   static #rng = Utils.seedRandom(12);
 
   constructor(data, sources) {

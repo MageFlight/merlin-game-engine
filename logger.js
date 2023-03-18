@@ -1,4 +1,4 @@
-class Logger {
+export class Logger {
   #debugWindow = null;
   #logBuffer = [];
   #logScroll = 1;
@@ -49,9 +49,6 @@ class Logger {
     this.#logBuffer = [];
   }
 }
-
-const logger = new Logger();
-log = logger.log.bind(logger);
 
 // let debugWindow = null;
 // let logBuffer = [];

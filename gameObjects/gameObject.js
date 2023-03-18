@@ -1,4 +1,7 @@
-class GameObject {
+import { Vector2 } from "../math/vector2.js";
+import { log } from "../main.js";
+
+export class GameObject {
   static genID = 0;
 
   _name = "";
@@ -117,7 +120,7 @@ class GameObject {
   }
 }
 
-class Sprite extends GameObject {  
+export class Sprite extends GameObject {  
   _position;
   _size = Vector2.one();
   _visible = true;

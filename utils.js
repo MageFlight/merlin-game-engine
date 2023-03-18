@@ -1,8 +1,8 @@
-class Utils {
-  static #gameSize = new Vector2(1920, 1088, true);
-  static #levelScale = 64;
-  static #levelSize = this.#gameSize.divide(this.#levelScale);
+import { Vector2 } from "./math/vector2.js";
+import { log } from "./main.js";
 
+export class Utils {
+  static #gameSize = new Vector2(1920, 1088, true);
   static #signals = {};
 
   static #timers = [];
@@ -13,14 +13,6 @@ class Utils {
    */
   static getGameSize() {
     return Utils.#gameSize.clone();
-  }
-
-  static getLevelSize() {
-    return this.#levelSize;
-  }
-
-  static getLevelScale() {
-    return Utils.#levelScale;
   }
 
   /**

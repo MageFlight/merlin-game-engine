@@ -1,4 +1,7 @@
-class MouseHandeler {
+import { Vector2 } from "../math/vector2.js";
+import { Renderer } from "./renderer.js";
+
+export class MouseHandeler {
   #buttonStates = [false, false, false, false, false];
   #buttonStatesQueue = [false, false, false, false, false];
   #position = Vector2.zero();
@@ -35,7 +38,7 @@ class MouseHandeler {
   }
 }
 
-class KeyboardHandler {
+export class KeyboardHandler {
   #registerKeyRepeat = false;
   #keysPressed = new Set();
   #changingKeys = new Set();

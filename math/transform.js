@@ -1,5 +1,7 @@
+import { Vector2 } from "../vector2.js";
+
 // Refrence https://docs.godotengine.org/en/stable/tutorials/math/matrices_and_transforms.html
-class Transform {
+export class Transform {
   _x = Vector2.right();
   _y = Vector2.down();
   _origin = Vector2.zero();

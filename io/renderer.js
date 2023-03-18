@@ -1,4 +1,7 @@
- class Renderer {
+import { Utils } from "../utils.js";
+import { log } from "../main.js";
+
+export class Renderer {
   #viewport;
   #canvas;
   static #scaleFactor = 1;

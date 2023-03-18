@@ -1,4 +1,4 @@
-class Resource {
+export class Resource {
   data;
   path;
 
@@ -8,7 +8,7 @@ class Resource {
   }
 }
 
-class ResourceLoader {
+export class ResourceLoader {
   static #loadedImages = {};
 
   static async getImage(src) {

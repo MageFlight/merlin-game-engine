@@ -1,6 +1,7 @@
 <html>
   <body>
     <!--#region MerlinEngine-->
+    <!--
     <script src="logger.js"></script>
     <script src="math/transform.js"></script>
     <script src="math/vector2.js"></script>
@@ -16,17 +17,24 @@
     <script src="gameObjects/gameObjectTree.js"></script>
     <script src="physicsEngine/physics.js"></script>
     <script src="gameState.js"></script>
-    <script src="main.js"></script>
+    -->
+    <script type="module" src="main.js"></script>
     <!--#endregion-->
-    <script src="example/test.js"></script>
-    <script>
+    <script type="module" src="example/test.js"></script>
+    <script type="module">
+      import { MerlinEngine } from "./main.js";
+      import { TestGame } from "./example/test.js";
+
       try {
         const engine = new MerlinEngine();
         const game = new TestGame();
-        game.load().then(() => {
-          engine.pushState(game);
-          engine.start();
-        }).catch(e => alert(e.stack));
+        game
+          .load()
+          .then(() => {
+            engine.pushState(game);
+            engine.start();
+          })
+          .catch((e) => alert(e.stack));
       } catch (e) {
         alert(e.stack);
       }

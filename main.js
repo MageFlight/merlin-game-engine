@@ -1,7 +1,15 @@
-const mouseHandeler = new MouseHandeler();
-const keyboardHandler = new KeyboardHandler(false);
+import { MouseHandeler, KeyboardHandler } from "./io/input.js";
+import { GameState } from "./gameState.js";
+import { Logger } from "./logger.js";
+import { Renderer } from "./io/renderer.js";
+import { Utils } from "./utils.js";
 
-class MerlinEngine {
+export const mouseHandeler = new MouseHandeler();
+export const keyboardHandler = new KeyboardHandler(false);
+export const logger = new Logger();
+export const log = logger.log.bind(logger);
+
+export class MerlinEngine {
   #gameStateStack = [];
   #gameStateStackBuffer = [];
 

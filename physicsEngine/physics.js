@@ -1,4 +1,8 @@
-class PhysicsEngine {
+import { AABB, Region, RigidBody } from "../gameObjects/physicsObjects.js";
+import { Vector2 } from "../math/vector2.js";
+import { log } from "../main.js";
+
+export class PhysicsEngine {
   _regions = [];
   _rigidBodies = [];
   _gravity = 0.0072;

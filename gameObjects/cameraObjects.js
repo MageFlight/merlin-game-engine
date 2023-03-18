@@ -1,4 +1,8 @@
-class CanvasLayer extends GameObject {
+import { GameObject, Sprite } from "./gameObject.js";
+import { Vector2 } from "../math/vector2.js";
+import { log } from "../main.js";
+
+export class CanvasLayer extends GameObject {
   _transform; // This transform is seperate from the regular canvas transform
 
   constructor(initialTransform, name) {
@@ -97,7 +101,7 @@ class Camera extends Sprite {
   }
 }
 
-class TextureRect extends Sprite {
+export class TextureRect extends Sprite {
   #texture;
 
   constructor(position, size, texture, name) {
@@ -120,7 +124,7 @@ class TextureRect extends Sprite {
   }
 }
 
-class ColorRect extends Sprite {
+export class ColorRect extends Sprite {
   #color;
 
   constructor(position, size, color, name) {

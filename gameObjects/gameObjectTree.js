@@ -1,4 +1,6 @@
-class GameObjectTree {
+import { CanvasLayer } from "./cameraObjects.js";
+
+export class GameObjectTree {
   #gameObjects = [];
   #gameObjectRemoveQueue = [];
   #physicsEngine;

@@ -1,4 +1,6 @@
-class GUISprite extends Sprite {
+import { log } from "../main.js";
+
+export class GUISprite extends Sprite {
   constructor(position, size, name) {
     super(position, size, name);
   }
@@ -6,7 +8,7 @@ class GUISprite extends Sprite {
   imgui(gui) {}
 }
 
-class Button extends GUISprite {
+export class Button extends GUISprite {
   _texture;
 
   constructor(position, size, texture, name) {

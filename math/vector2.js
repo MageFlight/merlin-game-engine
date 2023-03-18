@@ -1,4 +1,6 @@
-class Vector2 {
+import { log } from "../main.js";
+
+export class Vector2 {
   x;
   y;
   #readonly;
@@ -15,28 +17,28 @@ class Vector2 {
     this.#readonly = readonly;
   }
 
-  /**
-   * Creates a new Vector2 by multiplying two numbers by the level scale. The y-value is flipped such that the bottom left corner of the screen is (0, 0).
-   * @param {Number} x The initial x-value of the vector
-   * @param {Number} y the initial y-value of the vector
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
-   * @returns A new Vector2, appropriately scaled
-   */
-  static levelPositionVector2(x, y, readonly = false) {
-    log("LevelVec x: " + (x * Utils.getLevelScale()) + " y: " + (Utils.getGameSize().y - (y * Utils.getLevelScale())));
-    return new Vector2(x * Utils.getLevelScale(), Utils.getGameSize().y - (y * Utils.getLevelScale()), readonly);
-  }
+  // /**
+  //  * Creates a new Vector2 by multiplying two numbers by the level scale. The y-value is flipped such that the bottom left corner of the screen is (0, 0).
+  //  * @param {Number} x The initial x-value of the vector
+  //  * @param {Number} y the initial y-value of the vector
+  //  * @param {Boolean} readonly Determines whether the vector will be readonly.
+  //  * @returns A new Vector2, appropriately scaled
+  //  */
+  // static levelPositionVector2(x, y, readonly = false) {
+  //   log("LevelVec x: " + (x * Utils.getLevelScale()) + " y: " + (Utils.getGameSize().y - (y * Utils.getLevelScale())));
+  //   return new Vector2(x * Utils.getLevelScale(), Utils.getGameSize().y - (y * Utils.getLevelScale()), readonly);
+  // }
 
-  /**
-   * Creates a new read-only Vector 2 by multipling x and y by the level scale.
-   * @param {Number} x The initial x-value of the vector.
-   * @param {Number} y The initial y-value of the vector.
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
-   * @returns A new read-only Vector2 scaled by the level scale.
-   */
-  static levelVector2(x, y, readonly = false) {
-    return new Vector2(x * Utils.getLevelScale(), y * Utils.getLevelScale(), readonly);
-  }
+  // /**
+  //  * Creates a new read-only Vector 2 by multipling x and y by the level scale.
+  //  * @param {Number} x The initial x-value of the vector.
+  //  * @param {Number} y The initial y-value of the vector.
+  //  * @param {Boolean} readonly Determines whether the vector will be readonly.
+  //  * @returns A new read-only Vector2 scaled by the level scale.
+  //  */
+  // static levelVector2(x, y, readonly = false) {
+  //   return new Vector2(x * Utils.getLevelScale(), y * Utils.getLevelScale(), readonly);
+  // }
 
   /**
    * Returns a zero vector: a vector with all components set to 0
