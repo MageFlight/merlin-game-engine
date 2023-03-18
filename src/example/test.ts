@@ -1,7 +1,7 @@
 import { Utils } from "../utils.js";
 import { GameState } from "../gameState.js";
 import { Vector2 } from "../math/vector2.js";
-import { PhysicsEngine } from "../physicsEngine/physics.js";
+import { PhysicsEngine } from "../physicsEngine/physics";
 import { StaticBody, KinematicBody, AABB } from "../gameObjects/physicsObjects.js";
 import { ImageTexture, TiledTexture } from "../resources/textures.js";
 import { keyboardHandler, log } from "../main.js";
