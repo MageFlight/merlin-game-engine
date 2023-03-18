@@ -1,4 +1,4 @@
-import { Vector2 } from "./math/vector2.js";
+import { Vector2 } from "./math/vector2";
 import { log } from "./main.js";
 
 export class Utils {

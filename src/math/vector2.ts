@@ -1,4 +1,4 @@
-import { log } from "../main.js";
+import { log } from "../main";
 
 export class Vector2 {
   x;
