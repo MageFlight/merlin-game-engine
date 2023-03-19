@@ -95,37 +95,37 @@ export class Region extends CollisionObject {
 }
 
 export class RigidBody extends Region {
+  protected bounce: number = 0;
+  protected friction: number = 0.8;
+
   constructor(position, size, name) {
     super(position, size, name);
   }
 
-  onCollision(collision) {}
+  public getBounce(): number {
+    return this.bounce;
+  }
+
+  public setBounce(newBounce: number): void {
+    this.bounce = newBounce;
+  }
+
+  public getFriction(): number {
+    return this.friction;
+  }
+
+  public setFriction(newFriction: number): void {
+    this.friction = newFriction;
+  }
+
+  onCollision(collision: RigidBody) {}
 }
 
 export class StaticBody extends RigidBody {
-  _bounce = 0;
-  _friction = 0.8;
-
   constructor(position, size, bounce, friction, name) {
     super(position, size, name);
-    this._bounce = bounce;
-    this._friction = friction;
-  }
-
-  get bounce() {
-    return this._bounce;
-  }
-
-  set bounce(newBounce) {
-    this._bounce = newBounce;
-  }
-
-  get friction() {
-    return this._friction;
-  }
-
-  set friction(newFriction) {
-    this._friction = newFriction;
+    this.bounce = bounce;
+    this.friction = friction;
   }
 }
 

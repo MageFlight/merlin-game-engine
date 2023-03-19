@@ -2,19 +2,20 @@ import { Utils } from "../utils.js";
 import { GameState } from "../gameState.js";
 import { Vector2 } from "../math/vector2.js";
 import { PhysicsEngine } from "../physicsEngine/physics";
-import { StaticBody, KinematicBody, AABB } from "../gameObjects/physicsObjects.js";
+import { StaticBody, KinematicBody, AABB, RigidBody } from "../gameObjects/physicsObjects.js";
 import { ImageTexture, TiledTexture } from "../resources/textures.js";
 import { keyboardHandler, log } from "../main.js";
 import { GameObjectTree } from "../gameObjects/gameObjectTree.js";
 import { ResourceLoader } from "../resources/resource.js";
 import { ColorRect, TextureRect } from "../gameObjects/cameraObjects.js";
+import { Renderer } from "../io/renderer.js";
 
 export class TestGame extends GameState {
-  #objectTree = null;
+  private objectTree: GameObjectTree;
   
   constructor() {
     super();
-    this.#objectTree = new GameObjectTree(new PhysicsEngine());
+    this.objectTree = new GameObjectTree(new PhysicsEngine());
   }
 
   async load() {
@@ -23,7 +24,7 @@ export class TestGame extends GameState {
 
     console.log("ground: ", ground);
 
-    this.#objectTree.addGameObjects([
+    this.objectTree.addGameObjects([
       new Player()
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
@@ -38,16 +39,16 @@ export class TestGame extends GameState {
     ]);
   }
 
-  update(dt) {
-    this.#objectTree.update(dt);
+  update(dt: number) {
+    this.objectTree.update(dt);
   }
 
-  draw(renderer) {
-    this.#objectTree.draw(renderer);
+  draw(renderer: Renderer) {
+    this.objectTree.draw(renderer);
   }
 }
 
-class MovementParameters {
+class MovementParameters { // TODO: Make this an interface or type (Probally interface)
   maxSpeed;
 
   maxAcceleration;
@@ -83,19 +84,19 @@ class MovementParameters {
    * @param {Number} downwardGravity The multiplier on gravity on the object when its velocity is 0 or downwards.
    */
   constructor(
-    maxSpeed,
-    maxAcceleration,
-    maxAirAcceleration,
-    deccelerationRate,
-    airDeccelerationRate,
-    airFriction,
-    turnRate,
-    jumpHeight,
-    maxAirJumps,
-    jumpBuffer,
-    coyoteTime,
-    upwardGravity,
-    downwardGravity
+    maxSpeed: number,
+    maxAcceleration: number,
+    maxAirAcceleration: number,
+    deccelerationRate: number,
+    airDeccelerationRate: number,
+    airFriction: number,
+    turnRate: number,
+    jumpHeight: number,
+    maxAirJumps: number,
+    jumpBuffer: number,
+    coyoteTime: number,
+    upwardGravity: number,
+    downwardGravity: number
   ) {
     this.maxSpeed = maxSpeed;
     
@@ -128,38 +129,40 @@ class MovementParameters {
       this.jumpHeight,
       this.maxAirJumps,
       this.upwardGravity,
+      this.jumpBuffer,
+      this.upwardGravity,
       this.downwardGravity
     );
   }
 }
 
 class MovementController {
-  #movementParameters;
+  private movementParameters: MovementParameters;
 
-  #velocity = Vector2.zero();
-  #gravityMultiplier = 1;
+  private velocity = Vector2.zero();
+  private gravityMultiplier = 1;
 
-  #jumpsUsed = 0;
+  private jumpsUsed = 0;
 
-  #jumped = false;
-  #coyoteJumpAllowed = false;
+  private jumped = false;
+  private coyoteJumpAllowed: boolean = false;
 
-  #attemptingJump = false;
+  private attemptingJump = false;
 
   /**
    * A movement controller computes what an object's velocity should be based on the player input and the movement parameters.
    * @param {MovementParameters} movementParameters The initial movement parameters that constrain the object's movement
    */
-  constructor(movementParameters) {
-    this.#movementParameters = movementParameters;
+  constructor(movementParameters: MovementParameters) {
+    this.movementParameters = movementParameters;
   }
 
-  get movementParameters() {
-    return this.#movementParameters;
+  getMovementParameters(): MovementParameters {
+    return this.movementParameters;
   }
 
-  set movementParameters(newParameters) {
-    this.#movementParameters = newParameters;
+  setMovementParameters(newParameters: MovementParameters) {
+    this.movementParameters = newParameters;
   }
 
   /**
@@ -172,120 +175,129 @@ class MovementController {
    * @param {PhysicsEngine} physics The physics engine used in physics calculations
    * @returns The desired velocity after taking into account the current velocity and constraits.
    */
-  computeVelocity(desiredHorizontalDirection, jumpDesired, groundPlatform, downDirection, physics, dt) {
+  computeVelocity(desiredHorizontalDirection: number, jumpDesired: boolean, groundPlatform: RigidBody, downDirection: number, physics: PhysicsEngine, dt: number) {
     const onGround = groundPlatform != null;
     log("onGround: ", onGround);
-    this.#jumped = this.#jumped && !onGround;
+    this.jumped = this.jumped && !onGround;
     
     // Coyote time
-    this.#coyoteJumpAllowed *= !onGround; // If on the ground, coyoteJumpAllowed resets to 0. Otherwise, it keeps state
-    if (!this.#jumped && !onGround && this.#coyoteJumpAllowed == 0) {
-      this.#coyoteJumpAllowed = 1;
+    this.coyoteJumpAllowed = !onGround; // If on the ground, coyoteJumpAllowed resets to 0. Otherwise, it keeps state
+    if (!this.jumped && !onGround && !this.coyoteJumpAllowed) {
+      this.coyoteJumpAllowed = true;
       Utils.timer(() => {
         log("resetCoyote");
-        this.#coyoteJumpAllowed = -1;
-      }, this.#movementParameters.coyoteTime, false);
+        this.coyoteJumpAllowed = false;
+      }, this.movementParameters.coyoteTime, false);
     }
 
     // Horizontal Movement
     let acceleration = 0;
     if (desiredHorizontalDirection == 0) { // Deceleration
-      acceleration = this.#movementParameters.deccelerationRate * onGround + this.#movementParameters.airDeccelerationRate * !onGround;
+      acceleration = onGround ? this.movementParameters.deccelerationRate : this.movementParameters.airDeccelerationRate;
     } else {
-      acceleration = this.#movementParameters.maxAcceleration * onGround + this.#movementParameters.maxAirAcceleration * !onGround;
+      acceleration = onGround ? this.movementParameters.maxAcceleration : this.movementParameters.maxAirAcceleration;
 
-      if (desiredHorizontalDirection != Math.sign(this.#velocity.x)) { // Turning
-        acceleration *= this.#movementParameters.turnRate;
+      if (desiredHorizontalDirection != Math.sign(this.velocity.x)) { // Turning
+        acceleration *= this.movementParameters.turnRate;
       }
     }
 
-    acceleration /= onGround ? groundPlatform.friction : this.#movementParameters.airFriction;
-    this.#velocity.x = Utils.moveTowards(this.#velocity.x, desiredHorizontalDirection * this.#movementParameters.maxSpeed, acceleration * dt);
+    acceleration /= onGround ? groundPlatform.getFriction() : this.movementParameters.airFriction;
+    this.velocity.x = Utils.moveTowards(this.velocity.x, desiredHorizontalDirection * this.movementParameters.maxSpeed, acceleration * dt);
 
     //// Vertical Movement ////
     // Jumping
-    this.#jumpsUsed *= !onGround; // Reset jumps used if on ground
+    if (onGround) this.jumpsUsed = 0;
 
-    if (!this.#attemptingJump && jumpDesired) {
-      this.#attemptingJump = true;
-      Utils.timer(() => this.#attemptingJump = false, this.#movementParameters.jumpBuffer);
+    if (!this.attemptingJump && jumpDesired) {
+      this.attemptingJump = true;
+      Utils.timer(() => this.attemptingJump = false, this.movementParameters.jumpBuffer, false);
     }
 
-    log("jumping: ", this.#jumped);
+    log("jumping: ", this.jumped);
     log("jumpDesired: " + jumpDesired);
-    log("atteptingJump: " + this.#attemptingJump);
-    if (((onGround || this.#coyoteJumpAllowed == 1) || this.#jumpsUsed < this.#movementParameters.maxAirJumps || ((this.#jumpsUsed >= this.#movementParameters.maxAirJumps) && this.#movementParameters.temporaryAirJumps)) && this.#attemptingJump) {
-      this.#jumped = true;
-      this.#attemptingJump = false;
+    log("atteptingJump: " + this.attemptingJump);
+    if (((onGround || this.coyoteJumpAllowed) || this.jumpsUsed < this.movementParameters.maxAirJumps || ((this.jumpsUsed >= this.movementParameters.maxAirJumps) && this.movementParameters.temporaryAirJumps)) && this.attemptingJump) {
+      this.jumped = true;
+      this.attemptingJump = false;
 
-      if ((this.#jumpsUsed >= this.#movementParameters.maxAirJumps) && this.#movementParameters.temporaryAirJumps > 0 && !(onGround || this.#coyoteJumpAllowed == 1)) {
-        this.#movementParameters.temporaryAirJumps--;
-      } else {
-        this.#jumpsUsed += 1 * !(onGround || this.#coyoteJumpAllowed == 1);
+      if ((this.jumpsUsed >= this.movementParameters.maxAirJumps) && this.movementParameters.temporaryAirJumps > 0 && !(onGround || this.coyoteJumpAllowed)) {
+        this.movementParameters.temporaryAirJumps--;
+      } else if (!(onGround || this.coyoteJumpAllowed)) {
+        this.jumpsUsed++;
       }
 
-      let jumpSpeed = -Math.sqrt(-4 * this.#movementParameters.jumpHeight * -(physics.gravity * this.#movementParameters.upwardGravity)) * downDirection; // Gravity is inverted because y-axis is inverted (relative to math direction) in Andromeda Game Engine.
+      let jumpSpeed = -Math.sqrt(-4 * this.movementParameters.jumpHeight * -(physics.gravity * this.movementParameters.upwardGravity)) * downDirection; // Gravity is inverted because y-axis is inverted (relative to math direction) in Andromeda Game Engine.
 
       log("jumpSpeed: ", jumpSpeed);
       // Making jump height constant in air jump environments
-      if (this.#velocity.y < 0) {
-        jumpSpeed = jumpSpeed - this.#velocity.y;
-      } else if (this.#velocity.y > 0) {
-        jumpSpeed -= this.#velocity.y;
+      if (this.velocity.y < 0) {
+        jumpSpeed = jumpSpeed - this.velocity.y;
+      } else if (this.velocity.y > 0) {
+        jumpSpeed -= this.velocity.y;
       }
 
-      this.#velocity.y += jumpSpeed;
+      this.velocity.y += jumpSpeed;
     }
 
     // Special Gravity
 
-    if (this.#velocity.y * downDirection < 0) {
-      this.#gravityMultiplier = this.#movementParameters.upwardGravity * downDirection;
-    } else if (this.#velocity.y * downDirection > 0) {
-      this.#gravityMultiplier = this.#movementParameters.downwardGravity * downDirection;
+    if (this.velocity.y * downDirection < 0) {
+      this.gravityMultiplier = this.movementParameters.upwardGravity * downDirection;
+    } else if (this.velocity.y * downDirection > 0) {
+      this.gravityMultiplier = this.movementParameters.downwardGravity * downDirection;
     } else {
-      this.#gravityMultiplier = downDirection;
+      this.gravityMultiplier = downDirection;
     }
 
     // Apply Gravity
-    this.#velocity.y += physics.gravity * this.#gravityMultiplier * dt;
+    this.velocity.y += physics.gravity * this.gravityMultiplier * dt;
 
-    return this.#velocity;
+    return this.velocity;
   }
   
   reset() {
-    this.#velocity = Vector2.zero();
-    this.#gravityMultiplier = 1;
+    this.velocity = Vector2.zero();
+    this.gravityMultiplier = 1;
   }
 }
 
 class Player extends KinematicBody {
-  #spawn = new Vector2(128, 128);
-  #movementController = new MovementController(new MovementParameters(
+  private spawn: Vector2 = new Vector2(128, 128);
+  private movementController: MovementController = new MovementController(new MovementParameters(
     1, 0.009, 0.003, 0.007, 0.001, 0.9, 1.6,
     200, 1,
     83, 50,
     0.8, 1.2
     // 0, 0
   ));
-  #horizontalDirection = 0;
+  private horizontalDirection: number = 0;
 
   constructor() {
     super(new Vector2(128, 128), new Vector2(128, 128), "player");
   }
 
-  update(dt) {
-    this.#horizontalDirection = (keyboardHandler.isKeyDown("KeyA") != keyboardHandler.isKeyDown("KeyD")) * (keyboardHandler.isKeyDown("KeyA") * -1 + keyboardHandler.isKeyDown("KeyD")); // If both left or right are active, then 0. If left is active, then 1. If right is active, then -1.
+  update(dt: number) {
+    const pressLeft: boolean = keyboardHandler.isKeyDown("KeyA");
+    const pressRight: boolean = keyboardHandler.isKeyDown("KeyD");
+    if (pressLeft == pressRight) {
+      this.horizontalDirection = 0;
+    } else if (pressLeft) {
+      this.horizontalDirection = -1;
+    } else {
+      this.horizontalDirection = 1;
+    }
+
     if (this._position.y > 1088) {
-      this._position = this.#spawn.clone();
-      this.#movementController.reset();
+      this._position = this.spawn.clone();
+      this.movementController.reset();
     }
   }
 
-  physicsUpdate(physics, dt) {
+  physicsUpdate(physics: PhysicsEngine, dt: number) {
     const groundPlatform = this.getGroundPlatform(Vector2.up());
 
-    const velocity = this.#movementController.computeVelocity(this.#horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
+    const velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
     this.moveAndSlide(velocity, physics, dt);
   }
 }
