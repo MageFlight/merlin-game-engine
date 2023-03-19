@@ -1,5 +1,5 @@
 {
-  "name": "merlinengine",
+  "name": "merlin-game-engine",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MageFlight/MerlinEngine.git"
+    "url": "git+https://github.com/MageFlight/merlin-game-engine.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/MageFlight/MerlinEngine/issues"
+    "url": "https://github.com/MageFlight/merlin-game-engine/issues"
   },
-  "homepage": "https://github.com/MageFlight/MerlinEngine#readme",
+  "homepage": "https://github.com/MageFlight/merlin-game-engine#readme",
   "devDependencies": {
     "ts-loader": "^9.4.2",
     "typescript": "^5.0.2",
