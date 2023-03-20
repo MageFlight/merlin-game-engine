@@ -107,7 +107,7 @@ export class Utils {
   //   return finalObj;
   // }
 
-  static* seedRandom(startSeed: number): Generator<number, void, number> {
+  static* seedRandom(startSeed: number): Generator<number, never, number> {
     let seed = startSeed;
     while (true) {
       seed = (seed * 9301 + 49297) % 233280;
