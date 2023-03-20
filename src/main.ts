@@ -4,71 +4,70 @@ import { Logger } from "./logger.js";
 import { Renderer } from "./io/renderer.js";
 import { Utils } from "./utils.js";
 
-export const mouseHandeler = new MouseHandeler();
-export const keyboardHandler = new KeyboardHandler(false);
-export const logger = new Logger();
-export const log = logger.log.bind(logger);
+export const renderer: Renderer = new Renderer();
+export const mouseHandeler: MouseHandeler = new MouseHandeler();
+export const keyboardHandler: KeyboardHandler = new KeyboardHandler(false);
+export const logger: Logger = new Logger();
+export const log: Function = logger.log.bind(logger);
 
 export class MerlinEngine {
-  #gameStateStack = [];
-  #gameStateStackBuffer = [];
+  private gameStateStack = [];
+  private gameStateStackBuffer = [];
 
-  #dt = -1;
-  #prevStartTime = Date.now();
+  private dt = -1;
+  private prevStartTime = Date.now();
 
-  #renderer;
-  #logActive = true;
-  #paused = false;
+  private logActive = true;
+  private paused = false;
 
   constructor() {
-    this.#renderer = new Renderer();
   }
 
   /**
    * Begins the game engine loop
    */
   start() {
-    requestAnimationFrame(startTime => this.#frame(startTime).catch(e => alert(e.stack)));
-    Utils.listen("toggleLog", () => this.#logActive = !this.#logActive);
+    requestAnimationFrame(startTime => this.frame(startTime).catch(e => alert(e.stack)));
+    Utils.listen("toggleLog", () => this.logActive = !this.logActive);
   }
 
-  async #frame(startTime) {
+  private async frame(startTime: number) {
     try {
-      this.#dt = startTime - this.#prevStartTime;
-      this.#prevStartTime = startTime;
+      this.dt = startTime - this.prevStartTime;
+      this.prevStartTime = startTime;
 
       mouseHandeler.update();
       keyboardHandler.update();
 
-      if (keyboardHandler.keyJustReleased("KeyO")) this.#paused = false;
-      if (keyboardHandler.keyJustReleased("KeyP")) this.#paused = !this.#paused;
+      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = false;
+      if (keyboardHandler.keyJustReleased("KeyP")) this.paused = !this.paused;
 
-      if (this.#dt >= 0 && !this.#paused) {
-        Utils.timerUpdate(this.#dt);
+      if (this.dt >= 0 && !this.paused) {
+        Utils.timerUpdate(this.dt);
 
-        for (let i = this.#gameStateStack.length - 1; i >= 0; i--) {
-          const state = this.#gameStateStack[i];
+        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+          const state = this.gameStateStack[i];
           if (state && !state.paused) {
-            state.update(this.#dt);
+            state.update(this.dt);
           }
         }
 
-        this.#renderer.clear('#0000ff');
-        for (let i = this.#gameStateStack.length - 1; i >= 0; i--) {
-          const state = this.#gameStateStack[i];
+        renderer.clear('#0000ff');
+        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+          const state = this.gameStateStack[i];
           if (state && !state.paused) {
-            state.draw(this.#renderer);
+            state.draw();
           }
         }
       }
 
-      if (this.#logActive && !this.#paused) logger.update();
+      if (this.logActive && !this.paused) logger.update();
       
-      if (keyboardHandler.keyJustReleased("KeyO")) this.#paused = true;
-      if (keyboardHandler.keyJustReleased("KeyI")) this.#logActive = !this.#logActive;
+      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = true;
+      if (keyboardHandler.keyJustReleased("KeyI")) this.logActive = !this.logActive;
 
-      this.#gameStateStack = [...this.#gameStateStackBuffer];
-      requestAnimationFrame(startTime => this.#frame(startTime).catch(e => alert(e.stack)));
+      this.gameStateStack = [...this.gameStateStackBuffer];
+      requestAnimationFrame(startTime => this.frame(startTime).catch(e => alert(e.stack)));
       
     } catch (e) {
       alert(e.stack);
@@ -80,7 +79,7 @@ export class MerlinEngine {
    * @param {GameState} gameState The GameState to add to the stack.
    */
   pushState(gameState) {
-    this.#gameStateStackBuffer.push(gameState);
+    this.gameStateStackBuffer.push(gameState);
   }
 
   /**
@@ -88,6 +87,6 @@ export class MerlinEngine {
    * @returns The GameState that was removed
    */
   popState() {
-    return this.#gameStateStackBuffer.pop();
+    return this.gameStateStackBuffer.pop();
   }
 }

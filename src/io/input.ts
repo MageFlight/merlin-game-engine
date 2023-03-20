@@ -1,87 +1,87 @@
+import { renderer } from "../main.js";
 import { Vector2 } from "../math/vector2.js";
-import { Renderer } from "./renderer.js";
 
 export class MouseHandeler {
-  #buttonStates = [false, false, false, false, false];
-  #buttonStatesQueue = [false, false, false, false, false];
-  #position = Vector2.zero();
+  private buttonStates = [false, false, false, false, false];
+  private buttonStatesQueue = [false, false, false, false, false];
+  private position = Vector2.zero();
 
   constructor() {
     addEventListener("mousemove", event => {
-      const size = document.querySelector("canvas").getBoundingClientRect();
+      const size = renderer.getCanvasBoundingClientRect();
 
-      this.#position.x = (event.clientX - size.x) / Renderer.scaleFactor;
-      this.#position.y = (event.clientY - size.y) / Renderer.scaleFactor;
+      this.position.x = (event.clientX - size.x) / renderer.getScaleFactor();
+      this.position.y = (event.clientY - size.y) / renderer.getScaleFactor();
     });
 
     addEventListener("mousedown", event => {
-      this.#buttonStates[event.button] = true;
-      this.#buttonStatesQueue[event.button] = true;
+      this.buttonStates[event.button] = true;
+      this.buttonStatesQueue[event.button] = true;
     });
     addEventListener("mouseup", event => {
-      this.#buttonStatesQueue[event.button] = false;
+      this.buttonStatesQueue[event.button] = false;
     });
   }
 
-  update() {
-    for (let i = 0; i < this.#buttonStates.length; i++) {
-      this.#buttonStates[i] = this.#buttonStates[i] && this.#buttonStatesQueue[i];
+  update(): void {
+    for (let i = 0; i < this.buttonStates.length; i++) {
+      this.buttonStates[i] = this.buttonStates[i] && this.buttonStatesQueue[i];
     }
   }
 
-  getButtonState(mouseBtn) {
-    return this.#buttonStates[mouseBtn];
+  getButtonState(mouseBtn: number): boolean {
+    return this.buttonStates[mouseBtn];
   }
 
-  getMousePos() {
-    return this.#position;
+  getMousePos(): Vector2 {
+    return this.position;
   }
 }
 
 export class KeyboardHandler {
-  #registerKeyRepeat = false;
-  #keysPressed = new Set();
-  #changingKeys = new Set();
-  #changedKeys = new Set();
+  private registerKeyRepeat = false;
+  private keysPressed = new Set();
+  private changingKeys = new Set();
+  private changedKeys = new Set();
 
   constructor(registerKeyRepeat = false) {
-    this.#registerKeyRepeat = registerKeyRepeat;
+    this.registerKeyRepeat = registerKeyRepeat;
 
     addEventListener('keydown', event => {
-      if (!this.#registerKeyRepeat && event.repeat) return;
-      if (this.#keysPressed.has(event.code)) return;
+      if (!this.registerKeyRepeat && event.repeat) return;
+      if (this.keysPressed.has(event.code)) return;
 
-      this.#changingKeys.add(event.code);
+      this.changingKeys.add(event.code);
     });
 
     addEventListener('keyup', event => {
-      if (!this.#keysPressed.has(event.code)) return;
-      this.#changingKeys.add(event.code);
+      if (!this.keysPressed.has(event.code)) return;
+      this.changingKeys.add(event.code);
     })
   }
 
-  update() {
-    for (let key of this.#changingKeys) {
-      if (this.#keysPressed.has(key)) {
-        this.#keysPressed.delete(key);
+  update(): void {
+    for (let key of this.changingKeys) {
+      if (this.keysPressed.has(key)) {
+        this.keysPressed.delete(key);
       } else {
-        this.#keysPressed.add(key);
+        this.keysPressed.add(key);
       }
     }
 
-    this.#changedKeys = new Set(this.#changingKeys);
-    this.#changingKeys.clear();
+    this.changedKeys = new Set(this.changingKeys);
+    this.changingKeys.clear();
   }
 
-  isKeyDown(keyCode) {
-    return this.#keysPressed.has(keyCode);
+  isKeyDown(keyCode: string): boolean {
+    return this.keysPressed.has(keyCode);
   }
 
-  keyJustPressed(keyCode) {
-    return this.#changedKeys.has(keyCode) && this.#keysPressed.has(keyCode);
+  keyJustPressed(keyCode: string): boolean {
+    return this.changedKeys.has(keyCode) && this.keysPressed.has(keyCode);
   }
 
-  keyJustReleased(keyCode) {
-    return this.#changedKeys.has(keyCode) && !this.#keysPressed.has(keyCode);
+  keyJustReleased(keyCode: string): boolean {
+    return this.changedKeys.has(keyCode) && !this.keysPressed.has(keyCode);
   }
 }

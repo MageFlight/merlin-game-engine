@@ -4,7 +4,7 @@ import { Vector2 } from "../math/vector2.js";
 import { PhysicsEngine } from "../physicsEngine/physics";
 import { StaticBody, KinematicBody, AABB, RigidBody } from "../gameObjects/physicsObjects.js";
 import { ImageTexture, TiledTexture } from "../resources/textures.js";
-import { keyboardHandler, log } from "../main.js";
+import { keyboardHandler, log, renderer } from "../main.js";
 import { GameObjectTree } from "../gameObjects/gameObjectTree.js";
 import { ResourceLoader } from "../resources/resource.js";
 import { ColorRect, TextureRect } from "../gameObjects/cameraObjects.js";
@@ -29,22 +29,22 @@ export class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
 
-      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0, 0.8, "wall")
+      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0.8, "wall")
         .addChild(new AABB(Vector2.zero(), new Vector2(192, 320), true, "wallCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(192, 320), "#ff0000", "wallTex")),
 
-      new StaticBody(new Vector2(0, Utils.getGameSize().y - 128), new Vector2(1280, 128), 0, 0.8, "ground")
+      new StaticBody(new Vector2(0, Utils.GAME_HEIGHT - 128), new Vector2(1280, 128), 0.8, "ground")
         .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "groundCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(1280, 128), ground, "groundTexture"))
     ]);
   }
 
-  update(dt: number) {
+  override update(dt: number) {
     this.objectTree.update(dt);
   }
 
-  draw(renderer: Renderer) {
-    this.objectTree.draw(renderer);
+  override draw() {
+    this.objectTree.draw();
   }
 }
 
@@ -169,13 +169,13 @@ class MovementController {
    * Calculates the new velocity for the object, using the constraints and current velocity.
    * @param {Number} desiredHorizontalDirection The direction to accelerate towards. -1 is left, 1 is right, and 0 is stop
    * @param {boolean} jumpDesired Determines whether a jump should be attempted.
-   * @param {RigidBody} groundPlatform The RigidBody that the object is standing on. If airborne, this is null.
+   * @param {RigidBody | null} groundPlatform The RigidBody that the object is standing on. If airborne, this is null.
    * @param {Number} downDirection The direction of the ground. -1 is up relative to the screen, and 1 is down relative to the screen
    * @param {Number} dt The elapsed time since the start of the previous frame
    * @param {PhysicsEngine} physics The physics engine used in physics calculations
    * @returns The desired velocity after taking into account the current velocity and constraits.
    */
-  computeVelocity(desiredHorizontalDirection: number, jumpDesired: boolean, groundPlatform: RigidBody, downDirection: number, physics: PhysicsEngine, dt: number) {
+  computeVelocity(desiredHorizontalDirection: number, jumpDesired: boolean, groundPlatform: RigidBody | null, downDirection: number, physics: PhysicsEngine, dt: number) {
     const onGround = groundPlatform != null;
     log("onGround: ", onGround);
     this.jumped = this.jumped && !onGround;
@@ -227,7 +227,7 @@ class MovementController {
         this.jumpsUsed++;
       }
 
-      let jumpSpeed = -Math.sqrt(-4 * this.movementParameters.jumpHeight * -(physics.gravity * this.movementParameters.upwardGravity)) * downDirection; // Gravity is inverted because y-axis is inverted (relative to math direction) in Andromeda Game Engine.
+      let jumpSpeed = -Math.sqrt(-4 * this.movementParameters.jumpHeight * -(physics.getGravity() * this.movementParameters.upwardGravity)) * downDirection; // Gravity is inverted because y-axis is inverted (relative to math direction) in Andromeda Game Engine.
 
       log("jumpSpeed: ", jumpSpeed);
       // Making jump height constant in air jump environments
@@ -251,7 +251,7 @@ class MovementController {
     }
 
     // Apply Gravity
-    this.velocity.y += physics.gravity * this.gravityMultiplier * dt;
+    this.velocity.y += physics.getGravity() * this.gravityMultiplier * dt;
 
     return this.velocity;
   }
@@ -274,10 +274,10 @@ class Player extends KinematicBody {
   private horizontalDirection: number = 0;
 
   constructor() {
-    super(new Vector2(128, 128), new Vector2(128, 128), "player");
+    super(new Vector2(128, 128), new Vector2(128, 128), 0.8, "player");
   }
 
-  update(dt: number) {
+  override update(dt: number) {
     const pressLeft: boolean = keyboardHandler.isKeyDown("KeyA");
     const pressRight: boolean = keyboardHandler.isKeyDown("KeyD");
     if (pressLeft == pressRight) {
@@ -288,13 +288,13 @@ class Player extends KinematicBody {
       this.horizontalDirection = 1;
     }
 
-    if (this._position.y > 1088) {
-      this._position = this.spawn.clone();
+    if (this.position.y > 1088) {
+      this.position = this.spawn.clone();
       this.movementController.reset();
     }
   }
 
-  physicsUpdate(physics: PhysicsEngine, dt: number) {
+  override physicsUpdate(physics: PhysicsEngine, dt: number) {
     const groundPlatform = this.getGroundPlatform(Vector2.up());
 
     const velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);

@@ -1,20 +1,15 @@
-import { log } from "../main";
-
 export class Vector2 {
   x;
   y;
-  #readonly;
 
   /**
    * Creates a new Vector2 from two numbers
-   * @param {Number} x Initial x-value of the vector
-   * @param {Number} y Initial y-value of the vector
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
+   * @param {number} x Initial x-value of the vector
+   * @param {number} y Initial y-value of the vector
    */
-  constructor(x, y, readonly = false) {
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
-    this.#readonly = readonly;
   }
 
   // /**
@@ -42,56 +37,50 @@ export class Vector2 {
 
   /**
    * Returns a zero vector: a vector with all components set to 0
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new Zero vector2
    */
-  static zero(readonly = false) {
-    return new Vector2(0, 0, readonly);
+  static zero() {
+    return new Vector2(0, 0);
   }
 
   /**
    * Creates a new one vector: a vector with all components set to 1
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new one vector2
    */
-  static one(readonly = false) {
-    return new Vector2(1, 1, readonly);
+  static one() {
+    return new Vector2(1, 1);
   }
 
   /**
    * Creates a new normalized vector that is pointing upwards.
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new Vector with components of 0 and -1.
    */
-  static up(readonly = false) {
-    return new Vector2(0, -1, readonly);
+  static up() {
+    return new Vector2(0, -1);
   }
 
   /**
    * Creates a new normalized vector that is pointing downwards.
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new Vector with components of 0 and 1.
    */
-  static down(readonly = false) {
-    return new Vector2(0, 1, readonly);
+  static down() {
+    return new Vector2(0, 1);
   }
 
   /**
    * Creates a new normalized vector that is pointing left.
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new Vector with components of -1 and 0.
    */
-  static left(readonly = false) {
-    return new Vector2(-1, 0, readonly);
+  static left() {
+    return new Vector2(-1, 0);
   }
 
   /**
    * Creates a new normalized vector that is pointing upwards.
-   * @param {Boolean} readonly Determines whether the vector will be readonly.
    * @returns A new Vector with components of 1 and 0.
    */
-  static right(readonly = false) {
-    return new Vector2(1, 0, readonly);
+  static right() {
+    return new Vector2(1, 0);
   }
 
   /**
@@ -99,8 +88,8 @@ export class Vector2 {
    * @param {Vector2} vector Vector to add
    * @returns The resulting vector.
    */
-  add(vector) {
-    return new Vector2(this.x + vector.x, this.y + vector.y, this.#readonly || vector.readonly);
+  add(vector: Vector2) {
+    return new Vector2(this.x + vector.x, this.y + vector.y);
   }
 
   // /**
@@ -119,17 +108,17 @@ export class Vector2 {
    * @param {Vector2} vector The vector subtracting with
    * @returns The resulting vector.
    */
-  subtract(vector) {
-    return new Vector2(this.x - vector.x, this.y - vector.y, this.#readonly || vector.readonly);
+  subtract(vector: Vector2) {
+    return new Vector2(this.x - vector.x, this.y - vector.y);
   }
 
   /**
    * Multiplies the x-component and the y-component by a scalar.
-   * @param {Number} n The scalar value to multiply both components by
+   * @param {number} n The scalar value to multiply both components by
    * @returns The resulting vector.
    */
-  multiply(n) {
-    return new Vector2(this.x * n, this.y * n, this.#readonly);
+  multiply(n: number) {
+    return new Vector2(this.x * n, this.y * n);
   }
 
   /**
@@ -137,8 +126,8 @@ export class Vector2 {
    * @param {Number} n The number to divide this vector by
    * @returns The resulting vector.
    */
-  divide(n) {
-    return new Vector2(this.x / n, this.y / n), this.#readonly;
+  divide(n: number) {
+    return new Vector2(this.x / n, this.y / n);
   }
 
   /**
@@ -146,19 +135,15 @@ export class Vector2 {
    * @returns The clone of this vector
    */
   clone() {
-    return new Vector2(this.x, this.y, this.#readonly);
+    return new Vector2(this.x, this.y);
   }
 
   /**
    * Checks if this vector is equal to another vector.
-   * @param {Number} vector2 The vector to be compared to.
+   * @param {Vector2} vector2 The vector to be compared to.
    * @returns The result of the comparison.
    */
-  equals(vector2) {
+  equals(vector2: Vector2) {
     return this.x == vector2.x && this.y == vector2.y;
-  }
-
-  get readonly() {
-    return this.#readonly;
   }
 }

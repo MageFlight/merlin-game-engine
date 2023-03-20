@@ -1,96 +1,81 @@
 import { Vector2 } from "../math/vector2.js";
 import { log } from "../main.js";
+import { PhysicsEngine } from "../physicsEngine/physics.js";
+import { Renderer } from "../io/renderer.js";
+import { GameObjectTree } from "./gameObjectTree.js";
+import { Constructor } from "../utils.js";
 
 export class GameObject {
-  static genID = 0;
+  private static genID: number = 0;
 
-  _name = "";
+  protected readonly name: string = "";
 
-  _children = [];
-  _parent = null;
+  protected children: GameObject[] = [];
+  protected parent: GameObject | null = null;
 
-  _uid = GameObject.genID++;
+  protected readonly uid: number;
 
-  gameObjectTree = null;
+  protected gameObjectTree: GameObjectTree | null = null;
 
-  constructor(name) {
-    this._name = name;
+  protected visible: boolean = true;
+
+  constructor(name: string) {
+    this.name = name;
+    this.uid = GameObject.genID++;
   }
 
-  start() {
-  }
+  start(): void {};
+  update(dt: number): void {};
+  physicsUpdate(physics: PhysicsEngine, dt: number): void {};
+  draw(renderer: Renderer): void {};
 
-  update(dt) {
-  }
-
-  physicsUpdate(physics, dt) {
-  }
-
-  set gameObjectTree(newTree) {
+  addToGameObjectTree(newTree: GameObjectTree): void {
     this.gameObjectTree = newTree;
-    this._children.forEach(child => child.gameObjectTree = newTree);
+    this.children.forEach(child => child.gameObjectTree = newTree);
   }
 
-  addChild(child) {
-    log("parent init: " + this._parent);
+  addChild(child: GameObject): GameObject {
+    log("parent init: " + this.parent);
     child.parent = this;
     child.gameObjectTree = this.gameObjectTree;
-    this._children.push(child);
+    this.children.push(child);
     return this;
   }
 
-  removeChild(child) {
+  removeChild(child: GameObject): void {
     child.parent = null;
     child.gameObjectTree = null;
-    this._children.splice(this._children.indexOf(child), 1);
+    this.children.splice(this.children.indexOf(child), 1);
   }
 
-  getChildType(type) {
-    for (let i = 0; i < this._children.length; i++) {
-      if (this._children[i] instanceof type) {
-        return this._children[i];
+  getChildrenType<T extends GameObject>(type: Constructor<T>): T[] {
+    return <T[]> this.children.filter(child => child instanceof type);
+  }
+
+  getChildName(name: string): GameObject | null {
+    for (let i = 0; i < this.children.length; i++) {
+      if (this.children[i].name == name) {
+        return this.children[i];
       }
     }
 
     return null;
   }
 
-  getChildName(name) {
-    for (let i = 0; i < this._children.length; i++) {
-      if (this._children[i].name == name) {
-        return this._children[i];
+  getChildUid(uid: number): GameObject | null {
+    for (let i = 0; i < this.children.length; i++) {
+      if (this.children[i].uid == uid) {
+        return this.children[i];
       }
     }
 
     return null;
   }
 
-  getChildUid(uid) {
-    for (let i = 0; i < this._children.length; i++) {
-      if (this._children[i].uid == uid) {
-        return this._children[i];
-      }
-    }
-
-    return null;
-  }
-
-  getChildrenType(type) {
-    let kids = [];
-
-    for (let i = 0; i < this._children.length; i++) {
-      if (this._children[i] instanceof type) {
-        kids.push(this._children[i]);
-      }
-    }
-
-    return kids.length == 0 ? null : kids;
-  }
-
-  resolvePath(path) {
+  resolvePath(path: string): GameObject | null {
     const names = path.split("/");
 
-    let currentSpr = this;
+    let currentSpr: GameObject | null = this;
     for (let i = 0; i < names.length; i++) {
       if (currentSpr == null) return null;
 
@@ -99,97 +84,65 @@ export class GameObject {
     return currentSpr;
   }
 
-  get children() {
-    return this._children;
+  getChildren(): GameObject[] {
+    return this.children;
   }
 
-  get name() {
-    return this._name;
+  getName(): string {
+    return this.name;
   }
 
-  get uid() {
-    return this._uid;
+  getUid(): number {
+    return this.uid;
   }
 
-  get parent() {
-    return this._parent;
+  getParent(): GameObject | null {
+    return this.parent;
   }
   
-  set parent(newParent) {
-    this._parent = newParent;
+  setParent(newParent: GameObject): void {
+    this.parent = newParent;
+  }
+
+  isVisible(): boolean {
+    return this.visible;
+  }
+
+  setVisible(newVisibility: boolean): void {
+    this.visible = newVisibility;
   }
 }
 
 export class Sprite extends GameObject {  
-  _position;
-  _size = Vector2.one();
-  _visible = true;
+  protected position: Vector2;
+  protected size: Vector2;
 
-  constructor(position, size, name) {
+  constructor(position: Vector2, size: Vector2, name: string) {
     super(name);
-    this._position = position.clone();
-    this._size = size;
+    this.position = position.clone();
+    this.size = size;
   }
 
-  draw(renderer) {
+  getPosition(): Vector2 {
+    return this.position;
   }
 
-  get position() {
-    return this._position;
+  setPosition(newPosition: Vector2): void {
+    this.position = newPosition;
   }
 
-  set position(newPosition) {
-    this._position = newPosition;
+  getSize(): Vector2 {
+    return this.size;
   }
 
-  /**
-   * Translates this sprite along a given vector
-   * @param {Vector2} vector Vector to translate by
-   */
-  translate(vector) {
-    if (this._pinned) return;
-
-    const parentPos = this._globalPos.subtract(this._position);
-    this._position = this._position.add(vector);
+  setSize(newSize: Vector2): void {
+    this.size = newSize;
   }
 
-  /**
-   * Moves this sprite to a given position
-   * @param {Vector2} position The position to teleport to
-   */
-  teleport(position) {
-    if (this._pinned) return;
-
-    const parentPos = this._globalPos.subtract(this._position);
-    this._position = position.clone();
-  }
-
-  /**
-   * Moves this sprite to a given global position
-   * @param {Vector2} position Global position to teleport to
-   */
-  teleportGlobal(position) {
-    if (this._pinned) return;
-
-    this._position = this._position.add(position.subtract(this.globalPos));
-  }
-
-  get globalPos() {
-    if (this._parent && this._parent instanceof Sprite) {
-      return this._position.add(this._parent.globalPos);
+  getGlobalPos(): Vector2 {
+    if (this.parent instanceof Sprite) {
+      return this.position.add(this.parent.getGlobalPos());
     }
-    return this._position.clone();
-  }
-
-  get size() {
-    return this._size;
-  }
-
-  get visible() {
-    return this._visible;
-  }
-
-  set visible(newVisible) {
-    this._visible = newVisible;
+    return this.position.clone();
   }
 }
