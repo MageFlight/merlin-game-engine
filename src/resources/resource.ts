@@ -1,26 +1,26 @@
 export class Resource {
-  data;
-  path;
+  protected data: any;
+  protected path: string;
 
-  constructor(path, data) {
+  constructor(path: string, data: any) {
     this.path = path;
     this.data = data;
   }
 }
 
 export class ResourceLoader {
-  static #loadedImages = {};
+  static loadedImages: Map<string, ImageBitmap> = new Map();
 
-  static async getImage(src) {
-    if (!Object.hasOwn(ResourceLoader.#loadedImages, src)) { // Check if the image is already loaded
+  static async getImage(src: string): Promise<ImageBitmap> {
+    if (!ResourceLoader.loadedImages.has(src)) { // Check if the image is already loaded
       // log("loading img " + src)
-      ResourceLoader.#loadedImages[src] = await ResourceLoader.loadImage(src);
+      ResourceLoader.loadedImages.set(src, await ResourceLoader.loadImage(src));
     }
   
-    return ResourceLoader.#loadedImages[src];
+    return ResourceLoader.loadedImages.get(src)!;
   }
 
-  static async loadImage(src) {
+  static async loadImage(src: string): Promise<ImageBitmap> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = src;

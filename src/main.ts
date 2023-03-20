@@ -11,14 +11,14 @@ export const logger: Logger = new Logger();
 export const log: Function = logger.log.bind(logger);
 
 export class MerlinEngine {
-  private gameStateStack = [];
-  private gameStateStackBuffer = [];
+  private gameStateStack: GameState[] = [];
+  private gameStateStackBuffer: GameState[] = [];
 
-  private dt = -1;
-  private prevStartTime = Date.now();
+  private dt: number = -1;
+  private prevStartTime: number = Date.now();
 
-  private logActive = true;
-  private paused = false;
+  private logActive: boolean = true;
+  private paused: boolean = false;
 
   constructor() {
   }
@@ -46,16 +46,16 @@ export class MerlinEngine {
         Utils.timerUpdate(this.dt);
 
         for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-          const state = this.gameStateStack[i];
-          if (state && !state.paused) {
+          const state: GameState = this.gameStateStack[i];
+          if (state && !state.isPaused()) {
             state.update(this.dt);
           }
         }
 
         renderer.clear('#0000ff');
         for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-          const state = this.gameStateStack[i];
-          if (state && !state.paused) {
+          const state: GameState = this.gameStateStack[i];
+          if (state && !state.isPaused()) {
             state.draw();
           }
         }
@@ -69,7 +69,7 @@ export class MerlinEngine {
       this.gameStateStack = [...this.gameStateStackBuffer];
       requestAnimationFrame(startTime => this.frame(startTime).catch(e => alert(e.stack)));
       
-    } catch (e) {
+    } catch (e: any) {
       alert(e.stack);
     }
   }
@@ -78,7 +78,7 @@ export class MerlinEngine {
    * Pushes a GameState to the top of the Game State Stack.
    * @param {GameState} gameState The GameState to add to the stack.
    */
-  pushState(gameState) {
+  pushState(gameState: GameState): void {
     this.gameStateStackBuffer.push(gameState);
   }
 
@@ -86,7 +86,7 @@ export class MerlinEngine {
    * Removes the GameState at the top of the Game State Stack.
    * @returns The GameState that was removed
    */
-  popState() {
+  popState(): GameState | undefined {
     return this.gameStateStackBuffer.pop();
   }
 }
