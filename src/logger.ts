@@ -1,14 +1,14 @@
 export class Logger {
-  #debugWindow = null;
-  #logBuffer = [];
-  #logScroll = 1;
+  private debugWindow: Window | null = null;
+  private logBuffer: string[] = [];
+  private logScroll: number = 1;
 
   constructor() {
-    addEventListener("unload", () => this.#debugWindow.close());
+    addEventListener("unload", () => this.debugWindow?.close());
   }
 
-  log(...messages) {
-    const formattedMessages = [];
+  log(...messages: any[]) {
+    const formattedMessages: any[] = [];
     messages.forEach((message) => {
       if (message === undefined) {
         formattedMessages.push("undefined");
@@ -19,34 +19,41 @@ export class Logger {
     });
 
     // formattedMessages.unshift(`[${(new Error().stack.toString().split(/\r\n|\n/))[2].replace(/([\S\s]*\/Voidformer\/)|(\)$)/g, '')}] `);
-    this.#logBuffer.push(formattedMessages.join(""));
+    this.logBuffer.push(formattedMessages.join(""));
   }
 
   update() {
-    if (this.#debugWindow == null || this.#debugWindow.closed) {
-      this.#debugWindow = window.open(
+    if (this.debugWindow == null || this.debugWindow.closed) {
+      this.debugWindow = window.open(
         "",
         "DEBUG",
         `width=${screen.width / 2},height=${screen.height},top=${
           (screen.height - 500) / 2
         },left=${screen.width - 500}`
       );
-      this.#debugWindow.document.body.appendChild(
-        this.#debugWindow.document.createElement("pre")
+
+      if (this.debugWindow == null) throw new ReferenceError("Could not open a new Debug Window.");
+
+      this.debugWindow.document.body.appendChild(
+        this.debugWindow.document.createElement("pre")
       );
     }
 
-    const text = this.#debugWindow.document.querySelector("pre");
-    text.textContent = this.#logBuffer.join("\n");
-    this.#logScroll =
-      this.#debugWindow.document.body.scrollTop /
-      this.#debugWindow.document.body.scrollHeight;
-    this.#debugWindow.scrollTo(
-      this.#debugWindow.document.body.scrollLeft,
-      this.#logScroll * this.#debugWindow.document.body.scrollHeight
+    let text: HTMLPreElement | null = this.debugWindow.document.querySelector("pre");
+    if (text == null) {
+      text = this.debugWindow.document.createElement('pre');
+      this.debugWindow.document.body.appendChild(text);
+    }
+    text.textContent = this.logBuffer.join("\n");
+    this.logScroll =
+      this.debugWindow.document.body.scrollTop /
+      this.debugWindow.document.body.scrollHeight;
+    this.debugWindow.scrollTo(
+      this.debugWindow.document.body.scrollLeft,
+      this.logScroll * this.debugWindow.document.body.scrollHeight
     );
 
-    this.#logBuffer = [];
+    this.logBuffer = [];
   }
 }
 
