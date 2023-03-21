@@ -85,8 +85,8 @@ export class TiledTexture extends Texture {
     // let workingTiles = [...images]; // Copy the tiles
     // Utils.shuffleArray(workingTiles, TiledTexture.rng); // Initialize seed and shuffle array
 
-    for (let column = 0; column < (tileHorizontal ? size.x : tileSize); column += tileSize.x) {
-      for (let row = 0; row < (tileVertical ? size.y : tileSize); row += tileSize.y) {
+    for (let column = 0; column < (tileHorizontal ? size.x : tileSize.x); column += tileSize.x) {
+      for (let row = 0; row < (tileVertical ? size.y : tileSize.y); row += tileSize.y) {
         // if (workingTiles.length == 0) {
         //   workingTiles = [...images];
         //   Utils.shuffleArray(workingTiles, TiledTexture.rng);
