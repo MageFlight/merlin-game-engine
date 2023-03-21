@@ -9,6 +9,7 @@ import { GameObjectTree } from "../gameObjects/gameObjectTree";
 import { ResourceLoader } from "../resources/resource";
 import { ColorRect, TextureRect } from "../gameObjects/cameraObjects";
 import { Renderer } from "../io/renderer";
+import RightNormalV3 from "./rightNormalV3.svg";
 
 export class TestGame extends GameState {
   private objectTree: GameObjectTree;
@@ -19,8 +20,8 @@ export class TestGame extends GameState {
   }
 
   async load() {
-    const tex = await ImageTexture.createFromImage(await ResourceLoader.getImage('example/rightNormalV3.svg'), 'example/rightNormalV3.svg');
-    const ground = await TiledTexture.createFromPaths(['example/rightNormalV3.svg'], new Vector2(1280, 128), new Vector2(64, 64), -1, true, true);
+    const tex = await ImageTexture.createFromImage(await ResourceLoader.getImage(RightNormalV3), RightNormalV3);
+    const ground = await TiledTexture.createFromPaths([RightNormalV3], new Vector2(1280, 128), new Vector2(64, 64), -1, true, true);
 
     console.log("ground: ", ground);
 
