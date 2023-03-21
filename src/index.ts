@@ -10,7 +10,7 @@ try {
       engine.pushState(game);
       engine.start();
     })
-    .catch((e) => alert(e.stack));
-} catch (e) {
+    .catch((e: any) => alert(e.stack));
+} catch (e: any) {
   alert(e.stack);
 }
