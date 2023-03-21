@@ -8,7 +8,6 @@ import { keyboardHandler, log, renderer } from "../main";
 import { GameObjectTree } from "../gameObjects/gameObjectTree";
 import { ResourceLoader } from "../resources/resource";
 import { ColorRect, TextureRect } from "../gameObjects/cameraObjects";
-import { Renderer } from "../io/renderer";
 import RightNormalV3 from "./rightNormalV3.svg";
 
 export class TestGame extends GameState {
