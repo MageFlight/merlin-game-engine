@@ -1,7 +1,7 @@
-import { log } from "../main.js";
-import { Vector2 } from "../math/vector2.js";
-import { Texture } from "../resources/textures.js";
-import { Sprite } from "./gameObject.js";
+import { log } from "../main";
+import { Vector2 } from "../math/vector2";
+import { Texture } from "../resources/textures";
+import { Sprite } from "./gameObject";
 
 export class GUISprite extends Sprite {
   constructor(position: Vector2, size: Vector2, name: string) {

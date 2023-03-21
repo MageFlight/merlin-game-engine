@@ -1,7 +1,7 @@
-import { renderer } from "../main.js";
-import { Vector2 } from "../math/vector2.js";
-import { Utils } from "../utils.js";
-import { Resource, ResourceLoader } from "./resource.js";
+import { renderer } from "../main";
+import { Vector2 } from "../math/vector2";
+import { Utils } from "../utils";
+import { Resource, ResourceLoader } from "./resource";
 
 export class Texture extends Resource { // TODO: Add loader.
   size;

@@ -1,5 +1,5 @@
-import { renderer } from "../main.js";
-import { Vector2 } from "../math/vector2.js";
+import { renderer } from "../main";
+import { Vector2 } from "../math/vector2";
 
 export class MouseHandeler {
   private buttonStates = [false, false, false, false, false];

@@ -1,10 +1,10 @@
-import { GameObject, Sprite } from "./gameObject.js";
-import { Vector2 } from "../math/vector2.js";
-import { log, renderer } from "../main.js";
-import { Transform } from "../math/transform.js";
-import { Utils } from "../utils.js";
-import { Texture } from "../resources/textures.js";
-import { Renderer } from "../io/renderer.js";
+import { GameObject, Sprite } from "./gameObject";
+import { Vector2 } from "../math/vector2";
+import { log, renderer } from "../main";
+import { Transform } from "../math/transform";
+import { Utils } from "../utils";
+import { Texture } from "../resources/textures";
+import { Renderer } from "../io/renderer";
 
 export class CanvasLayer extends GameObject {
   protected transform: Transform; // This transform is seperate from the regular canvas transform

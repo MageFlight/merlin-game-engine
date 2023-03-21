@@ -1,9 +1,9 @@
-import { Vector2 } from "../math/vector2.js";
-import { log } from "../main.js";
-import { PhysicsEngine } from "../physicsEngine/physics.js";
-import { Renderer } from "../io/renderer.js";
-import { GameObjectTree } from "./gameObjectTree.js";
-import { Constructor } from "../utils.js";
+import { Vector2 } from "../math/vector2";
+import { log } from "../main";
+import { PhysicsEngine } from "../physicsEngine/physics";
+import { Renderer } from "../io/renderer";
+import { GameObjectTree } from "./gameObjectTree";
+import { Constructor } from "../utils";
 
 export class GameObject {
   private static genID: number = 0;

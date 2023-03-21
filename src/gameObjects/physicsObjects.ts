@@ -1,7 +1,7 @@
-import { Vector2 } from "../math/vector2.js";
-import { Sprite } from "./gameObject.js";
-import { log } from "../main.js";
-import { CollisionData, PhysicsEngine } from "../physicsEngine/physics.js";
+import { Vector2 } from "../math/vector2";
+import { Sprite } from "./gameObject";
+import { log } from "../main";
+import { CollisionData, PhysicsEngine } from "../physicsEngine/physics";
 
 export class AABB extends Sprite {
   protected enabled;

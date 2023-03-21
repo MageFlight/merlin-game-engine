@@ -1,8 +1,8 @@
-import { MouseHandeler, KeyboardHandler } from "./io/input.js";
-import { GameState } from "./gameState.js";
-import { Logger } from "./logger.js";
-import { Renderer } from "./io/renderer.js";
-import { Utils } from "./utils.js";
+import { MouseHandeler, KeyboardHandler } from "./io/input";
+import { GameState } from "./gameState";
+import { Logger } from "./logger";
+import { Renderer } from "./io/renderer";
+import { Utils } from "./utils";
 
 export const renderer: Renderer = new Renderer();
 export const mouseHandeler: MouseHandeler = new MouseHandeler();

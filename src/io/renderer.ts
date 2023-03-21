@@ -1,7 +1,7 @@
-import { Utils } from "../utils.js";
-import { log } from "../main.js";
-import { Vector2 } from "../math/vector2.js";
-import { Transform } from "../math/transform.js";
+import { Utils } from "../utils";
+import { log } from "../main";
+import { Vector2 } from "../math/vector2";
+import { Transform } from "../math/transform";
 
 export class Renderer {
   private viewport: CanvasRenderingContext2D;

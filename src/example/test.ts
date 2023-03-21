@@ -1,14 +1,14 @@
-import { Utils } from "../utils.js";
-import { GameState } from "../gameState.js";
-import { Vector2 } from "../math/vector2.js";
+import { Utils } from "../utils";
+import { GameState } from "../gameState";
+import { Vector2 } from "../math/vector2";
 import { PhysicsEngine } from "../physicsEngine/physics";
-import { StaticBody, KinematicBody, AABB, RigidBody } from "../gameObjects/physicsObjects.js";
-import { ImageTexture, TiledTexture } from "../resources/textures.js";
-import { keyboardHandler, log, renderer } from "../main.js";
-import { GameObjectTree } from "../gameObjects/gameObjectTree.js";
-import { ResourceLoader } from "../resources/resource.js";
-import { ColorRect, TextureRect } from "../gameObjects/cameraObjects.js";
-import { Renderer } from "../io/renderer.js";
+import { StaticBody, KinematicBody, AABB, RigidBody } from "../gameObjects/physicsObjects";
+import { ImageTexture, TiledTexture } from "../resources/textures";
+import { keyboardHandler, log, renderer } from "../main";
+import { GameObjectTree } from "../gameObjects/gameObjectTree";
+import { ResourceLoader } from "../resources/resource";
+import { ColorRect, TextureRect } from "../gameObjects/cameraObjects";
+import { Renderer } from "../io/renderer";
 
 export class TestGame extends GameState {
   private objectTree: GameObjectTree;

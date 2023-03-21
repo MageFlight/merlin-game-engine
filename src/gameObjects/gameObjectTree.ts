@@ -1,9 +1,9 @@
-import { Renderer } from "../io/renderer.js";
-import { renderer } from "../main.js";
-import { PhysicsEngine } from "../physicsEngine/physics.js";
-import { Camera, CanvasLayer } from "./cameraObjects.js";
-import { GameObject } from "./gameObject.js";
-import { Region } from "./physicsObjects.js";
+import { Renderer } from "../io/renderer";
+import { renderer } from "../main";
+import { PhysicsEngine } from "../physicsEngine/physics";
+import { Camera, CanvasLayer } from "./cameraObjects";
+import { GameObject } from "./gameObject";
+import { Region } from "./physicsObjects";
 
 export class GameObjectTree {
   private gameObjects: GameObject[] = [];
