@@ -19,7 +19,7 @@ export class TestGame extends GameState {
   }
 
   async load() {
-    const tex = await ImageTexture.createFromImage(await ResourceLoader.getImage('example/rightNormalV3.svg'));
+    const tex = await ImageTexture.createFromImage(await ResourceLoader.getImage('example/rightNormalV3.svg'), 'example/rightNormalV3.svg');
     const ground = await TiledTexture.createFromPaths(['example/rightNormalV3.svg'], new Vector2(1280, 128), new Vector2(64, 64), -1, true, true);
 
     console.log("ground: ", ground);

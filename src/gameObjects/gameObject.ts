@@ -27,7 +27,7 @@ export class GameObject {
   start(): void {};
   update(dt: number): void {};
   physicsUpdate(physics: PhysicsEngine, dt: number): void {};
-  draw(renderer: Renderer): void {};
+  draw(): void {};
 
   addToGameObjectTree(newTree: GameObjectTree): void {
     this.gameObjectTree = newTree;

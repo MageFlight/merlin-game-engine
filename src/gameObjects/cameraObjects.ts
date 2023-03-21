@@ -1,6 +1,6 @@
 import { GameObject, Sprite } from "./gameObject.js";
 import { Vector2 } from "../math/vector2.js";
-import { log } from "../main.js";
+import { log, renderer } from "../main.js";
 import { Transform } from "../math/transform.js";
 import { Utils } from "../utils.js";
 import { Texture } from "../resources/textures.js";
@@ -122,9 +122,9 @@ export class TextureRect extends Sprite {
     this.texture = newTex;
   }
 
-  override draw(renderer: Renderer): void {
+  override draw(): void {
     console.log("draw: ", renderer, " pos: ", this.getGlobalPos());
-    this.texture.draw(renderer, this.getGlobalPos());
+    this.texture.draw(this.getGlobalPos());
   }
 }
 
@@ -144,7 +144,7 @@ export class ColorRect extends Sprite {
     this.color = newColor;
   }
 
-  override draw(renderer: Renderer): void {
+  override draw(): void {
     renderer.fillRect(this.getGlobalPos(), this.size, this.color);
   }
 }

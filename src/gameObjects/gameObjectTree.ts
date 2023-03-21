@@ -80,7 +80,7 @@ export class GameObjectTree {
     } else {
       if (!object.isVisible()) return;
 
-      object.draw(renderer);
+      object.draw();
     }
 
     const objChildren = object.getChildren();
