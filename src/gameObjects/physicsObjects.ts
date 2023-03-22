@@ -1,6 +1,6 @@
 import { Vector2 } from "../math/vector2";
 import { Sprite } from "./gameObject";
-import { log } from "../main";
+import { log } from "../index";
 import { CollisionData, PhysicsEngine } from "../physicsEngine/physics";
 
 export class AABB extends Sprite {

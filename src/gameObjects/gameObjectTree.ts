@@ -1,5 +1,5 @@
 import { Renderer } from "../io/renderer";
-import { renderer } from "../main";
+import { renderer } from "../index";
 import { PhysicsEngine } from "../physicsEngine/physics";
 import { Camera, CanvasLayer } from "./cameraObjects";
 import { GameObject } from "./gameObject";

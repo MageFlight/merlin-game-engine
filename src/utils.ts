@@ -1,5 +1,5 @@
 import { Vector2 } from "./math/vector2";
-import { log } from "./main";
+import { log } from "./index";
 
 export type Constructor<T> = new (...args: any[]) => T;
 

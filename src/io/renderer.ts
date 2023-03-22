@@ -1,5 +1,5 @@
 import { Utils } from "../utils";
-import { log } from "../main";
+import { log } from "../index";
 import { Vector2 } from "../math/vector2";
 import { Transform } from "../math/transform";
 

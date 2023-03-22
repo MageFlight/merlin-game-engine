@@ -2,11 +2,15 @@
   "name": "merlin-game-engine",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
-    "serve": "webpack serve --open"
+    "build": "tsc",
+    "prepublish": "tsc"
   },
   "repository": {
     "type": "git",
@@ -20,10 +24,6 @@
   },
   "homepage": "https://github.com/MageFlight/merlin-game-engine#readme",
   "devDependencies": {
-    "ts-loader": "^9.4.2",
-    "typescript": "^5.0.2",
-    "webpack": "^5.76.2",
-    "webpack-cli": "^5.0.1",
-    "webpack-dev-server": "^4.13.1"
+    "typescript": "^5.0.2"
   }
 }

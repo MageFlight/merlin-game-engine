@@ -1,6 +1,6 @@
 import { AABB, CollisionObject, Region, RigidBody } from "../gameObjects/physicsObjects";
 import { Vector2 } from "../math/vector2";
-import { log } from "../main";
+import { log } from "../index";
 
 export interface CollisionData {
   time: number,

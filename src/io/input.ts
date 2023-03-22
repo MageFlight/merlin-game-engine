@@ -1,4 +1,4 @@
-import { renderer } from "../main";
+import { renderer } from "../index";
 import { Vector2 } from "../math/vector2";
 
 export class MouseHandeler {

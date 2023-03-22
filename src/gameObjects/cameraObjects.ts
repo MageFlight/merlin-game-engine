@@ -1,6 +1,6 @@
 import { GameObject, Sprite } from "./gameObject";
 import { Vector2 } from "../math/vector2";
-import { log, renderer } from "../main";
+import { log, renderer } from "../index";
 import { Transform } from "../math/transform";
 import { Utils } from "../utils";
 import { Texture } from "../resources/textures";

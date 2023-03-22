@@ -1,4 +1,4 @@
-import { log } from "../main";
+import { log } from "../index";
 import { Vector2 } from "../math/vector2";
 import { Texture } from "../resources/textures";
 import { Sprite } from "./gameObject";
