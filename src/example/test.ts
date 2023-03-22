@@ -146,6 +146,7 @@ class MovementController {
 
   private jumped = false;
   private coyoteJumpAllowed: boolean = false;
+  private coyoteJumpLocked: boolean = false;
 
   private attemptingJump = false;
 
@@ -179,14 +180,18 @@ class MovementController {
     const onGround = groundPlatform != null;
     log("onGround: ", onGround);
     this.jumped = this.jumped && !onGround;
-    
+    log("jumped: ", this.jumped);
+
     // Coyote time
-    this.coyoteJumpAllowed = !onGround; // If on the ground, coyoteJumpAllowed resets to 0. Otherwise, it keeps state
-    if (!this.jumped && !onGround && !this.coyoteJumpAllowed) {
+    this.coyoteJumpLocked = !onGround && this.coyoteJumpLocked;
+    log("coyoteJumpAllowed: ", this.coyoteJumpAllowed);
+    log("coyoteJumpLocked: ", this.coyoteJumpLocked);
+    if (!this.jumped && !onGround && !this.coyoteJumpAllowed && !this.coyoteJumpLocked) {
       this.coyoteJumpAllowed = true;
       Utils.timer(() => {
         log("resetCoyote");
         this.coyoteJumpAllowed = false;
+        this.coyoteJumpLocked = true;
       }, this.movementParameters.coyoteTime, false);
     }
 
