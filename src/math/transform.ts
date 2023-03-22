@@ -1,42 +1,46 @@
-import { Vector2 } from "../vector2.js";
+import { Vector2 } from "./vector2";
 
 // Refrence https://docs.godotengine.org/en/stable/tutorials/math/matrices_and_transforms.html
 export class Transform {
-  _x = Vector2.right();
-  _y = Vector2.down();
-  _origin = Vector2.zero();
+  private x = Vector2.right();
+  private y = Vector2.down();
+  private origin = Vector2.zero();
 
   constructor(x = Vector2.right(), y = Vector2.down(), origin = Vector2.zero()) {
-    this._x = x;
-    this._y = y;
-    this._origin = origin;
+    this.x = x;
+    this.y = y;
+    this.origin = origin;
   }
 
-  get x() {
-    return this._x;
+  getX(): Vector2 {
+    return this.x;
   }
 
-  set x(newX) {
-    this._x = newX;
+  setX(newX: Vector2): void {
+    this.x = newX;
   }
 
-  get y() {
-    return this._y;
+  getY(): Vector2 {
+    return this.y;
   }
 
-  set y(newY) {
-    this._y = newY;
+  setY(newY: Vector2): void {
+    this.y = newY;
   }
 
-  get origin() {
-    return this._origin;
+  getOrigin(): Vector2 {
+    return this.origin;
   }
 
-  set origin(newOrigin) {
-    this._origin = newOrigin;
+  setOrigin(newOrigin: Vector2): void {
+    this.origin = newOrigin;
   }
 
-  asRaw() {
-    return [this._x.x, this._x.y, this._y.x, this._y.y, this._origin.x, this._origin.y];
+  asRaw(): number[] {
+    return [this.x.x, this.x.y, this.y.x, this.y.y, this.origin.x, this.origin.y];
+  }
+
+  asDOMMatrix(): DOMMatrix {
+    return new DOMMatrix(this.asRaw());
   }
 }

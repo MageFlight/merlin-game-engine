@@ -1,86 +1,93 @@
-import { CanvasLayer } from "./cameraObjects.js";
+import { Renderer } from "../io/renderer";
+import { renderer } from "../main";
+import { PhysicsEngine } from "../physicsEngine/physics";
+import { Camera, CanvasLayer } from "./cameraObjects";
+import { GameObject } from "./gameObject";
+import { Region } from "./physicsObjects";
 
 export class GameObjectTree {
-  #gameObjects = [];
-  #gameObjectRemoveQueue = [];
-  #physicsEngine;
-  #activeCamera = null;
+  private gameObjects: GameObject[] = [];
+  private gameObjectRemoveQueue: GameObject[] = [];
+  private physicsEngine;
+  private activeCamera: Camera | null = null;
 
-  constructor(physicsEngine) {
-    this.#physicsEngine = physicsEngine;
+  constructor(physicsEngine: PhysicsEngine) {
+    this.physicsEngine = physicsEngine;
   }
 
-  addGameObject(gameObject) {
-    this.#gameObjects.push(gameObject);
-    this.#physicsEngine.addSprite(gameObject);
-    gameObject.gameObjectTree = this;
+  addGameObject(gameObject: GameObject): void {
+    this.gameObjects.push(gameObject);
+    if (gameObject instanceof Region) this.physicsEngine.addSprite(gameObject);
+    gameObject.addToGameObjectTree(this);
   }
   
-  addGameObjects(gameObjects) {
+  addGameObjects(gameObjects: GameObject[]): void {
     gameObjects.forEach(obj => this.addGameObject(obj));
   }
 
-  queueRemoveGameObject(gameObject) {
-    this.#gameObjectRemoveQueue.push(gameObject);
+  queueRemoveGameObject(gameObject: GameObject): void {
+    this.gameObjectRemoveQueue.push(gameObject);
   }
 
-  update(dt) {
-    for (let i = 0; i < this.#gameObjects.length; i++) {
-      this.#updateObject(this.#gameObjects[i], dt);
+  update(dt: number) {
+    for (let i = 0; i < this.gameObjects.length; i++) {
+      this.updateObject(this.gameObjects[i], dt);
     }
 
-    if (this.#physicsEngine) {
-      for (let i = 0; i < this.#gameObjects.length; i++) {
-        this.#physicsUpdateObject(this.#gameObjects[i], dt);
+    if (this.physicsEngine) {
+      for (let i = 0; i < this.gameObjects.length; i++) {
+        this.physicsUpdateObject(this.gameObjects[i], dt);
       }
 
-      this.#physicsEngine.interactRegions();
+      this.physicsEngine.interactRegions();
     }
 
-    this.#gameObjectRemoveQueue.forEach(obj => this.#gameObjects.splice(this.#gameObjects.indexOf(obj), 1));
-    if (this.#gameObjectRemoveQueue.length > 0) this.#gameObjectRemoveQueue = [];
+    this.gameObjectRemoveQueue.forEach(obj => this.gameObjects.splice(this.gameObjects.indexOf(obj), 1));
+    if (this.gameObjectRemoveQueue.length > 0) this.gameObjectRemoveQueue = [];
   }
 
-  #updateObject(obj, dt) {
+  private updateObject(obj: GameObject, dt: number): void {
     obj.update(dt);
 
-    for (let i = 0; i < obj.children.length; i++) {
-      this.#updateObject(obj.children[i], dt);
+    const objChildren = obj.getChildren();
+    for (let i = 0; i < objChildren.length; i++) {
+      this.updateObject(objChildren[i], dt);
     }
   }
 
-  #physicsUpdateObject(obj, dt) {
-    obj.physicsUpdate(this.#physicsEngine, dt);
+  private physicsUpdateObject(obj: GameObject, dt: number): void {
+    obj.physicsUpdate(this.physicsEngine, dt);
 
-    for (let i = 0; i < obj.children.length; i++) {
-      this.#physicsUpdateObject(obj.children[i], dt);
+    const objChildren = obj.getChildren();
+    for (let i = 0; i < objChildren.length; i++) {
+      this.physicsUpdateObject(objChildren[i], dt);
     }
   }
 
-  draw(renderer) {
-    if (this.#activeCamera) renderer.translateTo(this.#activeCamera.calculateScroll());
+  draw(): void {
+    if (this.activeCamera) renderer.translateTo(this.activeCamera.calculateScroll());
     
-    for (let i = 0; i < this.#gameObjects.length; i++) {
-      this.#drawObject(this.#gameObjects[i], renderer);
+    for (let i = 0; i < this.gameObjects.length; i++) {
+      this.drawObject(this.gameObjects[i], renderer);
     }
   }
 
-  #drawObject(object, renderer) {
-    const vp = renderer.viewport;
-    let originTransform;
+  private drawObject(object: GameObject, renderer: Renderer) {
+    let originTransform: DOMMatrix | null = null;
     if (object instanceof CanvasLayer) {
-      originTransform = vp.getTransform();
-      vp.setTransform(...object.transform.asRaw());
+      originTransform = renderer.getTransform();
+      renderer.setTransform(object.getTransform().asDOMMatrix());
     } else {
-      if (!object.visible) return;
+      if (!object.isVisible()) return;
 
-      object.draw(renderer);
+      object.draw();
     }
 
-    for (let i = 0; i < object.children.length; i++) {
-      this.#drawObject(object.children[i], renderer);
+    const objChildren = object.getChildren();
+    for (let i = 0; i < objChildren.length; i++) {
+      this.drawObject(objChildren[i], renderer);
     }
 
-    if (object instanceof CanvasLayer) vp.setTransform(originTransform);
+    if (originTransform !== null) renderer.setTransform(originTransform);
   }
 }

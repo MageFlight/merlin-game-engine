@@ -1,65 +1,79 @@
-import { GameObject, Sprite } from "./gameObject.js";
-import { Vector2 } from "../math/vector2.js";
-import { log } from "../main.js";
+import { GameObject, Sprite } from "./gameObject";
+import { Vector2 } from "../math/vector2";
+import { log, renderer } from "../main";
+import { Transform } from "../math/transform";
+import { Utils } from "../utils";
+import { Texture } from "../resources/textures";
 
 export class CanvasLayer extends GameObject {
-  _transform; // This transform is seperate from the regular canvas transform
+  protected transform: Transform; // This transform is seperate from the regular canvas transform
 
-  constructor(initialTransform, name) {
+  constructor(initialTransform: Transform, name: string) {
     super(name);
-    this._transform = initialTransform;
+    this.transform = initialTransform;
   }
 
-  get transform() {
-    return this._transform;
+  getTransform(): Transform {
+    return this.transform;
   }
 
-  set transform(newTransform) {
-    this._transform = newTransform;
+  setTransform(newTransform: Transform): void {
+    this.transform = newTransform;
   }
 }
 
-class Camera extends Sprite {
-  _scrollMin;
-  _scrollMax;
-  
-  _leftBound;
-  _rightBound;
-  _upBound;
-  _downBound;
+export class Camera extends GameObject {
+  protected scrollMin;
+  protected scrollMax;
 
-  _horizontalLock;
-  _verticalLock;
+  protected leftBound;
+  protected rightBound;
+  protected upBound;
+  protected downBound;
 
-  _scrollPos = Vector2.zero();
+  protected horizontalLock;
+  protected verticalLock;
+
+  protected scrollPos = Vector2.zero();
 
   /**
    * Creates a new camera
    * @param {Vector2} scrollMin The minimum scroll amounts
    * @param {Vector2} scrollMax The maximum scroll amounts
-   * @param {Number} leftBound The x amount at which the camera starts scrolling left
-   * @param {Number} rightBound The x amount at which the camera starts scrolling right
-   * @param {Number} upBound The y amount at which the camera starts scrolling up
-   * @param {Number} downBound The y amount at which the camera starts scrolling down
-   * @param {Boolean} horizontalLock Controls whether or not the camera will scroll horizontally
-   * @param {Boolean} verticalLock Controls whether or not the camera will scroll horizontally
-   * @param {Boolean} initialCamera Controls if the camera will be the first active camera
-   * @param {String} name The name of the camera
+   * @param {number} leftBound The x amount at which the camera starts scrolling left
+   * @param {number} rightBound The x amount at which the camera starts scrolling right
+   * @param {number} upBound The y amount at which the camera starts scrolling up
+   * @param {number} downBound The y amount at which the camera starts scrolling down
+   * @param {boolean} horizontalLock Controls whether or not the camera will scroll horizontally
+   * @param {boolean} verticalLock Controls whether or not the camera will scroll horizontally
+   * @param {boolean} initialCamera Controls if the camera will be the first active camera
+   * @param {string} name The name of the camera
    */
-  constructor(scrollMin, scrollMax, leftBound, rightBound, upBound, downBound, horizontalLock, verticalLock, initialCamera, name) {
-    super(Vector2.zero(), Vector2.zero(), name);
+  constructor(
+    scrollMin: Vector2,
+    scrollMax: Vector2,
+    leftBound: number,
+    rightBound: number,
+    upBound: number,
+    downBound: number,
+    horizontalLock: boolean,
+    verticalLock: boolean,
+    initialCamera: boolean,
+    name: string
+  ) {
+    super(name);
 
-    this._scrollMin = scrollMin;
-    this._scrollMax = scrollMax;
+    this.scrollMin = scrollMin;
+    this.scrollMax = scrollMax;
 
-    this._leftBound = leftBound;
-    this._rightBound = rightBound;
-    this._upBound = upBound;
-    this._downBound = downBound;
+    this.leftBound = leftBound;
+    this.rightBound = rightBound;
+    this.upBound = upBound;
+    this.downBound = downBound;
 
-    this._horizontalLock = horizontalLock;
-    this._verticalLock = verticalLock;
-    
+    this.horizontalLock = horizontalLock;
+    this.verticalLock = verticalLock;
+
     if (initialCamera) this.activate();
   }
 
@@ -68,79 +82,97 @@ class Camera extends Sprite {
   }
 
   calculateScroll() {
-    let parentScreenPosition;
-    if (this._parent == null) {
-      parentScreenPosition == Vector2.zero();
+    let parentScreenPosition: Vector2;
+    if (this.parent !== null && this.parent instanceof Sprite) {
+      parentScreenPosition = new Vector2(
+        this.parent.getGlobalPos().x - this.scrollPos.x,
+        this.parent.getGlobalPos().y - this.scrollPos.y
+      );
     } else {
-      parentScreenPosition = new Vector2(this._parent.globalPos.x - this._scrollPos.x, this._parent.globalPos.y - this._scrollPos.y);
+      parentScreenPosition = Vector2.zero();
     }
     log("parentSreenPos: ", JSON.stringify(parentScreenPosition));
-    log("scrollPos: " + JSON.stringify(this._scrollPos));
-    log("scrollMax: " + JSON.stringify(this._scrollMax));
-    log("scrollMin: " + JSON.stringify(this._scrollMin));
+    log("scrollPos: " + JSON.stringify(this.scrollPos));
+    log("scrollMax: " + JSON.stringify(this.scrollMax));
+    log("scrollMin: " + JSON.stringify(this.scrollMin));
 
     // x-axis
-    if (!this._horizontalLock) {
-      if (parentScreenPosition.x > this._rightBound) this._scrollPos.x += parentScreenPosition.x - this._rightBound;
-      if (parentScreenPosition.x < this._leftBound) this._scrollPos.x += parentScreenPosition.x - this._leftBound;
-      this._scrollPos.x = Math.min(Math.max(this._scrollPos.x, this._scrollMin.x), this._scrollMax.x - Utils.gameWidth);
+    if (!this.horizontalLock) {
+      if (parentScreenPosition.x > this.rightBound)
+        this.scrollPos.x += parentScreenPosition.x - this.rightBound;
+      if (parentScreenPosition.x < this.leftBound)
+        this.scrollPos.x += parentScreenPosition.x - this.leftBound;
+      this.scrollPos.x = Math.min(
+        Math.max(this.scrollPos.x, this.scrollMin.x),
+        this.scrollMax.x - Utils.GAME_WIDTH
+      );
     }
     // y-axis
-    if (!this._verticalLock) {
+    if (!this.verticalLock) {
       log("screenPos: " + parentScreenPosition.y);
-      log("upOffset: " + (parentScreenPosition.y - this._upBound));
-      log("downOffset: " + (parentScreenPosition.y - this._downBound));
-      if (parentScreenPosition.y < this._upBound) this._scrollPos.y += parentScreenPosition.y - this._upBound;
-      if (parentScreenPosition.y > this._downBound) this._scrollPos.y += parentScreenPosition.y - this._downBound;
-      log("beforeClamp: " + this._scrollPos.y);
-      this._scrollPos.y = Math.min(Math.max(this._scrollPos.y, this._scrollMin.y), this._scrollMax.y)
-      log("afterClamp: " + this._scrollPos.y);
+      log("upOffset: " + (parentScreenPosition.y - this.upBound));
+      log("downOffset: " + (parentScreenPosition.y - this.downBound));
+      if (parentScreenPosition.y < this.upBound)
+        this.scrollPos.y += parentScreenPosition.y - this.upBound;
+      if (parentScreenPosition.y > this.downBound)
+        this.scrollPos.y += parentScreenPosition.y - this.downBound;
+      log("beforeClamp: " + this.scrollPos.y);
+      this.scrollPos.y = Math.min(
+        Math.max(this.scrollPos.y, this.scrollMin.y),
+        this.scrollMax.y
+      );
+      log("afterClamp: " + this.scrollPos.y);
     }
-  
-    return this._scrollPos;
+
+    return this.scrollPos;
   }
 }
 
 export class TextureRect extends Sprite {
-  #texture;
+  protected texture: Texture;
 
-  constructor(position, size, texture, name) {
+  constructor(
+    position: Vector2,
+    size: Vector2,
+    texture: Texture,
+    name: string
+  ) {
     super(position, size, name);
     log("tex: " + JSON.stringify(texture));
-    this.#texture = texture;
+    this.texture = texture;
   }
 
-  set texture(newTex) {
-    this.#texture = newTex;
+  getTexture(): Texture {
+    return this.texture;
   }
 
-  get texture() {
-    return this.#texture;
+  setTexture(newTex: Texture): void {
+    this.texture = newTex;
   }
 
-  draw(renderer) {
-    console.log("draw: ", renderer, " pos: ", this.globalPos);
-    this.#texture.draw(renderer, this.globalPos);
+  override draw(): void {
+    console.log("draw: ", renderer, " pos: ", this.getGlobalPos());
+    this.texture.draw(this.getGlobalPos());
   }
 }
 
 export class ColorRect extends Sprite {
-  #color;
+  protected color: string;
 
-  constructor(position, size, color, name) {
+  constructor(position: Vector2, size: Vector2, color: string, name: string) {
     super(position, size, name);
-    this.#color = color;
+    this.color = color;
   }
 
-  get color() {
-    return this.#color;
+  getColor(): string {
+    return this.color;
   }
 
-  set color(newColor) {
-    this.#color = newColor;
+  setColor(newColor: string): void {
+    this.color = newColor;
   }
 
-  draw(renderer) {
-    renderer.fillRect(this.globalPos, this.size, this.#color);
+  override draw(): void {
+    renderer.fillRect(this.getGlobalPos(), this.size, this.color);
   }
 }

@@ -1,52 +1,59 @@
-import { AABB, Region, RigidBody } from "../gameObjects/physicsObjects.js";
-import { Vector2 } from "../math/vector2.js";
-import { log } from "../main.js";
+import { AABB, CollisionObject, Region, RigidBody } from "../gameObjects/physicsObjects";
+import { Vector2 } from "../math/vector2";
+import { log } from "../main";
+
+export interface CollisionData {
+  time: number,
+  normal: Vector2,
+  position: Vector2,
+  collider: RigidBody | null,
+}
 
 export class PhysicsEngine {
-  _regions = [];
-  _rigidBodies = [];
-  _gravity = 0.0072;
+  private regions: Region[] = [];
+  private rigidBodies: RigidBody[] = []; // TODO: Model Godot more in this; use CollisionObjects
+  private readonly gravity = 0.0072;
 
   constructor() {}
 
-  get gravity() {
-    return this._gravity;
+  getGravity(): number {
+    return this.gravity;
   }
 
-  reset() {
-    this._regions = [];
-    this._rigidBodies = [];
+  reset(): void {
+    this.regions = [];
+    this.rigidBodies = [];
   }
 
-  addSprites(sprites) {
+  addSprites(sprites: Region[]): void {
     sprites.forEach((sprite) => {
       this.addSprite(sprite);
     });
   }
 
-  addSprite(spr) {
+  addSprite(spr: Region): void {
     if (spr instanceof RigidBody) {
-      this._rigidBodies.push(spr);
+      this.rigidBodies.push(spr);
     } else if (spr instanceof Region) {
-      this._regions.push(spr);
+      this.regions.push(spr);
     }
 
-    this.addSprites(spr.children);
+    this.addSprites(spr.getChildrenType<Region>(Region));
   }
 
-  removeSprite(spr) {
+  removeSprite(spr: Region): void {
     if (spr instanceof RigidBody) {
-      this._rigidBodies.splice(this._rigidBodies.indexOf(spr), 1);
+      this.rigidBodies.splice(this.rigidBodies.indexOf(spr), 1);
     } else if (spr instanceof Region) {
-      this._regions.splice(this._regions.indexOf(spr), 1);
+      this.regions.splice(this.regions.indexOf(spr), 1);
     }
   }
 
-  interactRegions() {
-    const allBodies = this._regions.concat(this._rigidBodies);
+  interactRegions(): void {
+    const allBodies = this.regions.concat(this.rigidBodies);
 
-    for (let i = 0; i < this._regions.length; i++) {
-      const region = this._regions[i];
+    for (let i = 0; i < this.regions.length; i++) {
+      const region = this.regions[i];
 
       for (let x = 0; x < allBodies.length; x++) {
         const sprite2 = allBodies[x];
@@ -63,8 +70,8 @@ export class PhysicsEngine {
    * @param {Number} dt Delta time
    * @returns The collision information
    */
-  checkCollisions(sprite, velocity, spriteExcludeList, dt) {
-    const spriteGlobalPos = sprite.getChildType(AABB).globalPos;
+  checkCollisions(sprite: RigidBody, velocity: Vector2, spriteExcludeList: CollisionObject[], dt: number): CollisionData | null {
+    const spriteGlobalPos = sprite.getChildrenType<AABB>(AABB)[0].getGlobalPos();
     let broadBox = new AABB(
       new Vector2(
         velocity.x > 0
@@ -74,53 +81,48 @@ export class PhysicsEngine {
       ),
       new Vector2(
         velocity.x > 0
-          ? velocity.x * dt + sprite.size.x
-          : sprite.size.x - velocity.x * dt,
+          ? velocity.x * dt + sprite.getSize().x
+          : sprite.getSize().x - velocity.x * dt,
         velocity.y > 0
-          ? velocity.y * dt + sprite.size.y
-          : sprite.size.y - velocity.y * dt
+          ? velocity.y * dt + sprite.getSize().y
+          : sprite.getSize().y - velocity.y * dt
       ),
       true,
       "broadBox"
     );
     log("vel: " + JSON.stringify(velocity) + " dt: " + dt);
-    log("bBox size: " + JSON.stringify(broadBox.size));
-    log("bBox pos: " + JSON.stringify(broadBox.position));
-    log("dBox pos: " + JSON.stringify(sprite.globalPos));
-    log("groundpos: ", this._rigidBodies[2].globalPos);
+    log("bBox size: " + JSON.stringify(broadBox.getSize()));
+    log("bBox pos: " + JSON.stringify(broadBox.getPosition()));
+    log("dBox pos: " + JSON.stringify(sprite.getGlobalPos()));
+    log("groundpos: ", this.rigidBodies[2].getGlobalPos());
 
     const possibleSprites = [];
-    for (let i = 0; i < this._rigidBodies.length; i++) {
-      const spr = this._rigidBodies[i];
+    for (let i = 0; i < this.rigidBodies.length; i++) {
+      const spr = this.rigidBodies[i];
       if (
         spr != sprite &&
         spriteExcludeList.indexOf(spr) == -1 &&
-        PhysicsEngine.staticAABB(broadBox, spr.getChildType(AABB))
+        PhysicsEngine.staticAABB(broadBox, spr.getChildrenType<AABB>(AABB)[0])
       )
         possibleSprites.push(spr);
     }
 
     log("possibleSpriteLength: ", possibleSprites.length);
-    log("rigidBodyCount: ", this._rigidBodies.length);
+    log("rigidBodyCount: ", this.rigidBodies.length);
 
     if (possibleSprites.length == 0) {
-      return {
-        time: 1,
-        normal: Vector2.zero(),
-        position: sprite.globalPos.add(velocity.multiply(dt)),
-        collider: null,
-      };
+      return null;
     }
 
     // Check if any are directly overlapping with a static Seperating Axis Theorem test. (https://noonat.github.io/intersect/#aabb-vs-aabb)
     for (let i = 0; i < possibleSprites.length; i++) {
-      const b1Collider = sprite.getChildType(AABB);
-      const b2Collider = possibleSprites[i].getChildType(AABB);
+      const b1Collider = sprite.getChildrenType<AABB>(AABB)[0];
+      const b2Collider = possibleSprites[i].getChildrenType<AABB>(AABB)[0];
 
-      const b2Pos = b2Collider.globalPos;
+      const b2Pos = b2Collider.getGlobalPos();
 
-      const b1HalfSize = b1Collider.size.multiply(0.5);
-      const b2HalfSize = b2Collider.size.multiply(0.5);
+      const b1HalfSize = b1Collider.getSize().multiply(0.5);
+      const b2HalfSize = b2Collider.getSize().multiply(0.5);
 
       const dx =
         b1HalfSize.x +
@@ -137,7 +139,7 @@ export class PhysicsEngine {
       log("ExtraCheck  dx: " + dx + " dy: " + dy);
       if (dx < dy) {
         const signX = Math.sign(dx);
-        const collision = {
+        const collision: CollisionData = {
           time: 0,
           normal: new Vector2(signX, 0),
           position: new Vector2(spriteGlobalPos.x + signX, spriteGlobalPos.y),
@@ -166,7 +168,7 @@ export class PhysicsEngine {
     }
 
     // Get closest collision
-    let closestSprites = [];
+    let closestSprites: RigidBody[] = [];
     let closestDist = Infinity;
     for (let i = 0; i < possibleSprites.length; i++) {
       const dist = PhysicsEngine.getDist(sprite, possibleSprites[i], velocity);
@@ -203,39 +205,36 @@ export class PhysicsEngine {
       if (collisions.length > 0) {
         const finalCollision = collisions[collisions.length - 1];
         sprite.onCollision(finalCollision);
-        finalCollision.collider.onCollision(finalCollision);
+        finalCollision.collider?.onCollision(finalCollision);
         return finalCollision;
       } else {
-        return {
-          time: 1,
-          normal: Vector2.zero(),
-          position: sprite.globalPos.add(velocity.multiply(dt)),
-          collider: null,
-        };
+        return null;
       }
     }
+
+    return null;
   }
 
-  static getDist(dBox, sBox, dBoxVel) {
+  static getDist(dBox: CollisionObject, sBox: CollisionObject, dBoxVel: Vector2): number {
     let dist = Vector2.zero();
-    const dBoxPos = dBox.globalPos;
-    const sBoxPos = sBox.globalPos;
+    const dBoxPos = dBox.getGlobalPos();
+    const sBoxPos = sBox.getGlobalPos();
     log("sBox pos: " + JSON.stringify(sBoxPos));
 
     // Get the distances
     if (dBoxVel.x > 0) {
       // Moving right
-      dist.x = sBoxPos.x - (dBoxPos.x + dBox.size.x);
+      dist.x = sBoxPos.x - (dBoxPos.x + dBox.getSize().x);
     } else {
       // Moving left
-      dist.x = sBoxPos.x + sBox.size.x - dBoxPos.x;
+      dist.x = sBoxPos.x + sBox.getSize().x - dBoxPos.x;
     }
     if (dBoxVel.y > 0) {
       // Moving down
-      dist.y = sBoxPos.y - (dBoxPos.y + dBox.size.y);
+      dist.y = sBoxPos.y - (dBoxPos.y + dBox.getSize().y);
     } else {
       // Moving Up
-      dist.y = dBoxPos.y - (sBoxPos.y + sBox.size.y);
+      dist.y = dBoxPos.y - (sBoxPos.y + sBox.getSize().y);
     }
 
     log("dists preSnap: " + JSON.stringify(dist));
@@ -251,26 +250,26 @@ export class PhysicsEngine {
    * @param {AABB} c2 Second Collider
    * @returns True if both colliders are intersecting, False if they aren't.
    */
-  static staticAABB(c1, c2) {
-    const c1Pos = c1.globalPos;
-    const c2Pos = c2.globalPos;
+  static staticAABB(c1: AABB, c2: AABB): boolean {
+    const c1Pos = c1.getGlobalPos();
+    const c2Pos = c2.getGlobalPos();
 
     return (
-      c1Pos.x + c1.size.x > c2Pos.x &&
-      c1Pos.x < c2Pos.x + c2.size.x &&
-      c1Pos.y + c1.size.y > c2Pos.y &&
-      c1Pos.y < c2.globalPos.y + c2.size.y
+      c1Pos.x + c1.getSize().x > c2Pos.x &&
+      c1Pos.x < c2Pos.x + c2.getSize().x &&
+      c1Pos.y + c1.getSize().y > c2Pos.y &&
+      c1Pos.y < c2.getGlobalPos().y + c2.getSize().y
     );
   }
 
   // RETURN the time and surface normal.
   // Adapted from https://www.gamedev.net/articles/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/
-  static sweptAABB(dynamicBox, staticBox, vel, dt) {
-    const b1 = dynamicBox.getChildType(AABB);
-    const b2 = staticBox.getChildType(AABB);
+  static sweptAABB(dynamicBox: RigidBody, staticBox: RigidBody, vel: Vector2, dt: number): CollisionData {
+    const b1 = dynamicBox.getChildrenType<AABB>(AABB)[0];
+    const b2 = staticBox.getChildrenType<AABB>(AABB)[0];
 
-    const b1Pos = b1.globalPos;
-    const b2Pos = b2.globalPos;
+    const b1Pos = b1.getGlobalPos();
+    const b2Pos = b2.getGlobalPos();
 
     let entryDist = Vector2.zero();
     let exitDist = Vector2.zero();
@@ -278,27 +277,27 @@ export class PhysicsEngine {
     let exitTime = Vector2.zero();
 
     log("b1Pos: " + JSON.stringify(b1Pos));
-    log("b1Size: " + JSON.stringify(b1.size));
+    log("b1Size: " + JSON.stringify(b1.getSize()));
     log("b2Pos: " + JSON.stringify(b2Pos));
-    log("b2Size: " + JSON.stringify(b2.size));
+    log("b2Size: " + JSON.stringify(b2.getSize()));
     // Find the distances between the near and far sides of the boxes.
     if (vel.x > 0) {
       // Moving right
-      entryDist.x = b2Pos.x - (b1Pos.x + b1.size.x);
-      exitDist.x = b2Pos.x + b2.size.x - b1Pos.x;
+      entryDist.x = b2Pos.x - (b1Pos.x + b1.getSize().x);
+      exitDist.x = b2Pos.x + b2.getSize().x - b1Pos.x;
     } else {
       // Moving left
-      entryDist.x = b2Pos.x + b2.size.x - b1Pos.x;
-      exitDist.x = b2Pos.x - (b1Pos.x + b1.size.x);
+      entryDist.x = b2Pos.x + b2.getSize().x - b1Pos.x;
+      exitDist.x = b2Pos.x - (b1Pos.x + b1.getSize().x);
     }
     if (vel.y > 0) {
       // Moving down
-      entryDist.y = b2Pos.y - (b1Pos.y + b1.size.y);
-      exitDist.y = b2Pos.y + b2.size.y - b1Pos.y;
+      entryDist.y = b2Pos.y - (b1Pos.y + b1.getSize().y);
+      exitDist.y = b2Pos.y + b2.getSize().y - b1Pos.y;
     } else {
       // Moving Up
-      entryDist.y = b2Pos.y + b2.size.y - b1Pos.y;
-      exitDist.y = b2Pos.y - (b1Pos.y + b1.size.y);
+      entryDist.y = b2Pos.y + b2.getSize().y - b1Pos.y;
+      exitDist.y = b2Pos.y - (b1Pos.y + b1.getSize().y);
     }
 
     log("entryDist: " + JSON.stringify(entryDist));
@@ -349,7 +348,7 @@ export class PhysicsEngine {
             time: finalEntryTime,
             normal: Vector2.right(),
             position: new Vector2(
-              b2Pos.x + b2.size.x,
+              b2Pos.x + b2.getSize().x,
               b1Pos.y + vel.y * finalEntryTime
             ),
             collider: staticBox,
@@ -359,7 +358,7 @@ export class PhysicsEngine {
             time: finalEntryTime,
             normal: Vector2.left(),
             position: new Vector2(
-              b2Pos.x - b1.size.x,
+              b2Pos.x - b1.getSize().x,
               b1Pos.y + vel.y * finalEntryTime
             ),
             collider: staticBox,
@@ -372,7 +371,7 @@ export class PhysicsEngine {
             normal: Vector2.down(),
             position: new Vector2(
               b1Pos.x + vel.x * finalEntryTime,
-              b2Pos.y + b2.size.y
+              b2Pos.y + b2.getSize().y
             ),
             collider: staticBox,
           };
@@ -382,7 +381,7 @@ export class PhysicsEngine {
             normal: Vector2.up(),
             position: new Vector2(
               b1Pos.x + vel.x * finalEntryTime,
-              b2Pos.y - b1.size.y
+              b2Pos.y - b1.getSize().y
             ),
             collider: staticBox,
           };

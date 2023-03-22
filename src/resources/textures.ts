@@ -1,48 +1,48 @@
-import { Vector2 } from "../math/vector2.js";
-import { Utils } from "../utils.js";
-import { Resource, ResourceLoader } from "./resource.js";
+import { renderer } from "../main";
+import { Vector2 } from "../math/vector2";
+import { Utils } from "../utils";
+import { Resource, ResourceLoader } from "./resource";
 
-export class Texture extends Resource {
+export class Texture extends Resource { // TODO: Add loader.
   size;
 
-  constructor(path, data) {
-    super(path);
+  constructor(path: string, data: ImageBitmap) {
+    super(path, data);
 
-    this.data = data;
     this.size = new Vector2(data.width, data.height);
   }
 
-  draw(renderer, position, size = null) {
+  draw(position: Vector2, size = null) {
     renderer.drawImage(position, size == null ? this.size : size, this.data);
   }
 }
 
 export class ImageTexture extends Texture {
-  constructor(data, size = null) {
-    super(data.src, data);
+  constructor(data: ImageBitmap, src: string, size?: Vector2) {
+    super(src, data);
 
-    if (size != null) {
+    if (size !== undefined) {
       this.size = size;
     }
   }
 
-  static async createFromImage(image, size = null) {
-    return new ImageTexture(image, size);
+  static async createFromImage(image: ImageBitmap, src: string, size?: Vector2): Promise<ImageTexture> {
+    return new ImageTexture(image, src, size);
   }
   
-  static async createFromPath(path, size = null) {
-    return new ImageTexture(await ResourceLoader.getImage(path), size);
+  static async createFromPath(path: string, size?: Vector2): Promise<ImageTexture> {
+    return new ImageTexture(await ResourceLoader.getImage(path), path, size);
   }
 }
 
 export class TiledTexture extends Texture {
-  static #rng = Utils.seedRandom(12);
+  private static rng = Utils.seedRandom(12);
 
-  constructor(data, sources) {
+  constructor(data: ImageBitmap, sources: string[]) {
     super(sources.join(";"), data);
   }
 
-  static #drawTile(img, column, row, size, tileSize, tileRotation, tileHorizontal, tileVertical, tileRender) {
+  private static drawTile(img: ImageBitmap, column: number, row: number, size: Vector2, tileSize: Vector2, tileRotation: number, tileHorizontal: boolean, tileVertical: boolean, tileRender: CanvasRenderingContext2D) {
     if (tileRotation != 0) {
       const width = tileHorizontal ? tileSize.x : size.x;
       const height = tileVertical ? tileSize.y : size.y;
@@ -51,7 +51,7 @@ export class TiledTexture extends Texture {
 
       const angle =
         tileRotation == -1
-          ? Math.floor(TiledTexture.#rng.next().value * 4) * 0.5 * Math.PI
+          ? Math.floor(TiledTexture.rng.next().value * 4) * 0.5 * Math.PI
           : (tileRotation * Math.PI) / 180;
       
       // Essentially rotating the image about its center
@@ -65,50 +65,48 @@ export class TiledTexture extends Texture {
         img,
         column,
         row,
-        tileHorizontal ? tileSize : size.x,
-        tileVertical ? tileSize : size.y
+        tileHorizontal ? tileSize.x : size.x,
+        tileVertical ? tileSize.y : size.y
       );
     }
 
     tileRender.setTransform(1, 0, 0, 1, 0, 0); // Identity matrix to reset
   }
 
-  static async createFromImages(images, size, tileSize, tileRotation, tileHorizontal = true, tileVertical = true) {
+  static async createFromImages(images: ImageBitmap[], sources: string[], size: Vector2, tileSize: Vector2, tileRotation: number, tileHorizontal: boolean, tileVertical: boolean) {
     const tileCanvas = document.createElement('canvas');
     tileCanvas.width = size.x;
     tileCanvas.height = size.y;
     const tileRender = tileCanvas.getContext('2d');
+    if (tileRender == null) {
+      throw new ReferenceError("Could not get the CanvasRenderingContext2D for creating the Tiled Texture.");
+    }
 
-    let workingTiles = [...images]; // Copy the tiles
-    Utils.shuffleArray(workingTiles, TiledTexture.#rng); // Initialize seed and shuffle array
+    // let workingTiles = [...images]; // Copy the tiles
+    // Utils.shuffleArray(workingTiles, TiledTexture.rng); // Initialize seed and shuffle array
 
-    for (let column = 0; column < (tileHorizontal ? size.x : tileSize); column += tileSize.x) {
-      for (let row = 0; row < (tileVertical ? size.y : tileSize); row += tileSize.y) {
-        const img = workingTiles.shift();
-        
-        TiledTexture.#drawTile(img, column, row, size, tileSize, tileRotation, tileHorizontal, tileVertical, tileRender);
+    for (let column = 0; column < (tileHorizontal ? size.x : tileSize.x); column += tileSize.x) {
+      for (let row = 0; row < (tileVertical ? size.y : tileSize.y); row += tileSize.y) {
+        // if (workingTiles.length == 0) {
+        //   workingTiles = [...images];
+        //   Utils.shuffleArray(workingTiles, TiledTexture.rng);
+        // }
 
-        if (workingTiles.length == 0) {
-          workingTiles = [...images];
-          Utils.shuffleArray(workingTiles, TiledTexture.#rng);
-        }
+        const img = images[Math.floor(TiledTexture.rng.next().value * images.length)];
+        console.log(img);
+        TiledTexture.drawTile(img, column, row, size, tileSize, tileRotation, tileHorizontal, tileVertical, tileRender);
       }
     }
 
-    let sources = [];
-    for (let i = 0; i < images.length; i++) {
-      sources.push(images[i].src);
-    }
-
-    return new TiledTexture(await createImageBitmap(tileCanvas), sources);
+    return new TiledTexture(await createImageBitmap(tileCanvas), sources); // Create an Image class that has imageBitmap and a matching source
   }
 
-  static async createFromPaths(paths, size, tileSize, tileRotation, tileHorizontal = true, tileVertical = true) {
-    let tiles = [];
+  static async createFromPaths(paths: string[], size: Vector2, tileSize: Vector2, tileRotation: number, tileHorizontal: boolean, tileVertical: boolean) {
+    let tiles: ImageBitmap[] = [];
     for (let i = 0; i < paths.length; i++) {
       tiles.push(await ResourceLoader.getImage(paths[i]));
     }
 
-    return TiledTexture.createFromImages(tiles, size, tileSize, tileRotation, tileHorizontal, tileVertical);
+    return TiledTexture.createFromImages(tiles, paths, size, tileSize, tileRotation, tileHorizontal, tileVertical);
   }
 }

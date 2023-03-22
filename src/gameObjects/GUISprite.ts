@@ -1,27 +1,34 @@
-import { log } from "../main.js";
+import { log } from "../main";
+import { Vector2 } from "../math/vector2";
+import { Texture } from "../resources/textures";
+import { Sprite } from "./gameObject";
 
 export class GUISprite extends Sprite {
-  constructor(position, size, name) {
+  constructor(position: Vector2, size: Vector2, name: string) {
     super(position, size, name);
   }
 
-  imgui(gui) {}
+  /**
+   * Updates this GUISprite's gui functions
+   * @param gui The user interface class to use.
+   */
+  imgui(gui: never): void {} // TODO: Add IMGUI
 }
 
 export class Button extends GUISprite {
-  _texture;
+  protected texture: Texture;
 
-  constructor(position, size, texture, name) {
+  constructor(position: Vector2, size: Vector2, texture: Texture, name: string) {
     super(position, size, name);
-    this._texture = texture;
+    this.texture = texture;
   }
 
-  imgui(gui) {
-    log("Buttoning")
-    if (gui.button(gui.getID(), this._position, this._size, this._texture)) {
-      this.onPress();
-    }
-  }
+  // override imgui(gui) {
+  //   log("Buttoning")
+  //   if (gui.button(gui.getID(), this._position, this._size, this._texture)) {
+  //     this.onPress();
+  //   }
+  // }
 
-  onPress() {}
+  onPress(): void {}
 }
