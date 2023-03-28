@@ -5,18 +5,35 @@ import { Transform } from "../math/transform";
 import { Utils } from "../utils";
 import { Texture } from "../resources/textures";
 
+/**
+ * A Game Object that applies a special Transform before rendering its children. After its children have been rendered, the original transform is restored.
+ */
 export class CanvasLayer extends GameObject {
+  /** The transform that will be applied to the canvas during rendering. */
   protected transform: Transform; // This transform is seperate from the regular canvas transform
 
+  /**
+   * The constructor of the CanvasLayer
+   * @param initialTransform The transform that will be used as the active transform.
+   * @param name The name of the CanvasLayer.
+   */
   constructor(initialTransform: Transform, name: string) {
     super(name);
     this.transform = initialTransform;
   }
 
+  /**
+   * Gets the currently active transform for this CanvasLayer.
+   * @returns Returns the current active transform on this CanvasLayer
+   */
   getTransform(): Transform {
     return this.transform;
   }
 
+  /**
+   * Sets the currently active transform on this CanvasLayer
+   * @param newTransform The transform to become the active transform on this CanvasLayer.
+   */
   setTransform(newTransform: Transform): void {
     this.transform = newTransform;
   }
