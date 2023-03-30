@@ -18,9 +18,14 @@ export class MerlinEngine {
   private prevStartTime: number = Date.now();
 
   private logActive: boolean = true;
-  private paused: boolean = false;
+  private paused: boolean;
 
-  constructor() {
+  /**
+   * The constructor for MerlinEngine
+   * @param paused Whether or not the game engine will initially be paused.
+   */
+  constructor(paused: boolean = false) {
+    this.paused = paused;
   }
 
   /**
