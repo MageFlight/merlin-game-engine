@@ -1,4 +1,3 @@
 dist/
 .devcontainer
 node_modules/
-docs/
