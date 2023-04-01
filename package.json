@@ -9,8 +9,8 @@
   ],
   "scripts": {
     "test": "webpack serve",
-    "build": "tsc",
-    "prepublish": "tsc"
+    "build": "tsc --project tsconfig.production.json",
+    "prepack": "tsc --project tsconfig.production.json"
   },
   "repository": {
     "type": "git",

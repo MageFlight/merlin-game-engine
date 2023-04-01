@@ -12,7 +12,9 @@ module.exports = {
     open: true
   },
   plugins: [
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: "Testing"
+    }),
   ],
   module: {
     rules: [
