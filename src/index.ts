@@ -34,6 +34,7 @@ export class MerlinEngine {
   start() {
     requestAnimationFrame(startTime => this.frame(startTime));
     Utils.listen("toggleLog", () => this.logActive = !this.logActive);
+    Utils.listen("togglePause", () => this.paused = !this.paused);
   }
 
   private async frame(startTime: number) {

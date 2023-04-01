@@ -114,7 +114,7 @@ export class PhysicsEngine {
       return null;
     }
 
-    // Check if any are directly overlapping with a static Seperating Axis Theorem test. (https://noonat.github.io/intersect/#aabb-vs-aabb)
+    // Check if any are directly overlapping with a static Seperating Axis Theorem test. (https:`//noonat.github.io/intersect/#aabb-vs-aabb)
     for (let i = 0; i < possibleSprites.length; i++) {
       const b1Collider = sprite.getChildrenType<AABB>(AABB)[0];
       const b2Collider = possibleSprites[i].getChildrenType<AABB>(AABB)[0];
@@ -124,25 +124,24 @@ export class PhysicsEngine {
       const b1HalfSize = b1Collider.getSize().multiply(0.5);
       const b2HalfSize = b2Collider.getSize().multiply(0.5);
 
-      const dx =
-        b1HalfSize.x +
-        b2HalfSize.x -
-        Math.abs(b2Pos.x + b2HalfSize.x - (spriteGlobalPos.x + b1HalfSize.x));
-      if (dx <= 0) continue;
+      log("b1Pos: ", spriteGlobalPos, " b1HalfSize: ", b1HalfSize);
+      log("b2Pos: ", b2Pos, " b2HalfSize: ", b2HalfSize);
+      const dx = (spriteGlobalPos.x + b1HalfSize.x) - (b2Pos.x + b2HalfSize.x);
+      const px = (b2HalfSize.x + b1HalfSize.x) - Math.abs(dx);
+      if (px <= 0) continue;
 
-      const dy =
-        b1HalfSize.y +
-        b2HalfSize.y -
-        Math.abs(b2Pos.y + b2HalfSize.y - (spriteGlobalPos.y + b1HalfSize.y));
-      if (dy <= 0) continue;
-
-      log("ExtraCheck  dx: " + dx + " dy: " + dy);
-      if (dx < dy) {
-        const signX = Math.sign(dx);
+      const dy = (b2Pos.y + b2HalfSize.y) - (spriteGlobalPos.y + b1HalfSize.y);
+      const py = (b2HalfSize.y + b1HalfSize.y) - Math.abs(dy);
+      if (py <= 0) continue;
+    
+      log("dx: ", dx, " dy: ", dy);
+      log("ExtraCheck  px: " + px + " py: " + py);
+      if (px < py) {
+        const signX = dx == 0 ? 1 : Math.sign(dx);
         const collision: CollisionData = {
           time: 0,
           normal: new Vector2(signX, 0),
-          position: new Vector2(spriteGlobalPos.x + signX, spriteGlobalPos.y),
+          position: new Vector2(spriteGlobalPos.x + px * signX, spriteGlobalPos.y),
           collider: possibleSprites[i],
         };
 
@@ -150,14 +149,14 @@ export class PhysicsEngine {
         possibleSprites[i].onCollision(collision);
         return collision;
       } else {
-        const signY = Math.sign(dy);
+        const signY = dy == 0 ? 1 : Math.sign(dy);
         log("spriteGlobalPos: ", spriteGlobalPos.y);
-        log("signY: ", signY, " sub: ", spriteGlobalPos.y - signY);
-        log("expected position: ", new Vector2(0, spriteGlobalPos.y - signY));
+        log("signY: ", signY, " sub: ", (py * signY));
+        log("expected position: ", new Vector2(spriteGlobalPos.x, spriteGlobalPos.y - py * signY));
         const collision = {
           time: 0,
           normal: new Vector2(0, signY),
-          position: new Vector2(spriteGlobalPos.x, spriteGlobalPos.y - signY),
+          position: new Vector2(spriteGlobalPos.x, spriteGlobalPos.y - py * signY),
           collider: possibleSprites[i],
         };
 
