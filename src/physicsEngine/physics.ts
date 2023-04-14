@@ -6,7 +6,7 @@ export interface CollisionData {
   time: number,
   normal: Vector2,
   position: Vector2,
-  collider: RigidBody | null,
+  collider: RigidBody,
 }
 
 export class PhysicsEngine {
@@ -72,6 +72,7 @@ export class PhysicsEngine {
    */
   checkCollisions(sprite: RigidBody, velocity: Vector2, spriteExcludeList: CollisionObject[], dt: number): CollisionData | null {
     const spriteGlobalPos = sprite.getChildrenType<AABB>(AABB)[0].getGlobalPos();
+
     let broadBox = new AABB(
       new Vector2(
         velocity.x > 0
@@ -191,6 +192,8 @@ export class PhysicsEngine {
           dt
         );
 
+        if (collision === null) return null;
+
         if (!collision.normal.equals(Vector2.zero())) {
           collisions.push(collision);
 
@@ -263,7 +266,7 @@ export class PhysicsEngine {
 
   // RETURN the time and surface normal.
   // Adapted from https://www.gamedev.net/articles/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/
-  static sweptAABB(dynamicBox: RigidBody, staticBox: RigidBody, vel: Vector2, dt: number): CollisionData {
+  static sweptAABB(dynamicBox: RigidBody, staticBox: RigidBody, vel: Vector2, dt: number): CollisionData | null {
     const b1 = dynamicBox.getChildrenType<AABB>(AABB)[0];
     const b2 = staticBox.getChildrenType<AABB>(AABB)[0];
 
@@ -334,12 +337,7 @@ export class PhysicsEngine {
       (entryTime.x < 0 && entryTime.y < 0) ||
       (entryTime.x > 1 && entryTime.y > 1)
     ) {
-      return {
-        time: 1,
-        normal: Vector2.zero(),
-        position: b1Pos.add(vel.multiply(dt)),
-        collider: null,
-      };
+      return null;
     } else {
       if (entryTime.x > entryTime.y) {
         if (entryDist.x < 0 || (entryDist.x == 0 && vel.x < 0)) {

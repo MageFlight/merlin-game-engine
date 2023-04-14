@@ -29,7 +29,7 @@ export class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
 
-      new SquarePlayer()
+      new SquarePlayer(new Vector2(196, 128), "squarePlayer")
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "squareCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "#00ffff", "squareTexture")),
 
@@ -53,13 +53,39 @@ export class TestGame extends GameState {
 }
 
 class SquarePlayer extends KinematicBody {
-  constructor() {
-    super(new Vector2(128, 128), new Vector2(128, 128), 0.8, "square");
-    log("createSquare");
+  private spawnpoint: Vector2;
+  private speed: number = 0.5;
+
+  constructor(spawnpoint: Vector2, name: string) {
+    super(spawnpoint, new Vector2(128, 128), Vector2.zero(), false, 0.8, name);
+    this.spawnpoint = spawnpoint.clone();
   }
 
   override update(dt: number): void {
-    log("updateSquare dt: ", dt);
+    log("Update squarePlayer");
+    log("Square Velocity: ", this.velocity);
+    if (keyboardHandler.keyJustPressed("ArrowRight") && this.velocity.equals(Vector2.zero())) {
+      this.velocity.x = this.speed;
+    } else if (keyboardHandler.keyJustPressed("ArrowLeft") && this.velocity.equals(Vector2.zero())) {
+      this.velocity.x = -this.speed;
+    } else if (keyboardHandler.keyJustPressed("ArrowUp") && this.velocity.equals(Vector2.zero())) {
+      this.velocity.y = -this.speed;
+    } else if (keyboardHandler.keyJustPressed("ArrowDown") && this.velocity.equals(Vector2.zero())) {
+      this.velocity.y = this.speed;
+    }
+
+    if (this.position.x < 0 || this.position.x > Utils.GAME_WIDTH || this.position.y < 0 || this.position.y > Utils.GAME_HEIGHT) {
+      this.die();
+    }
+  }
+
+  override physicsUpdate(physics: PhysicsEngine, dt: number): void {
+    this.moveAndSlide(physics, dt);
+  }
+
+  die() {
+    this.position = this.spawnpoint.clone();
+    this.velocity = Vector2.zero();
   }
 }
 
@@ -294,7 +320,7 @@ class Player extends KinematicBody {
   private horizontalDirection: number = 0;
 
   constructor() {
-    super(new Vector2(128, 128), new Vector2(128, 128), 0.8, "player");
+    super(new Vector2(128, 128), new Vector2(128, 128), Vector2.zero(), true, 0.8, "player");
   }
 
   override update(dt: number) {
@@ -317,7 +343,7 @@ class Player extends KinematicBody {
   override physicsUpdate(physics: PhysicsEngine, dt: number) {
     const groundPlatform = this.getGroundPlatform(Vector2.up());
 
-    const velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
-    this.moveAndSlide(velocity, physics, dt);
+    this.velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
+    this.moveAndSlide(physics, dt);
   }
 }
