@@ -264,6 +264,48 @@ export class PhysicsEngine {
     );
   }
 
+  // Very helpful explination: https://noonat.github.io/intersect/#aabb-vs-segment
+  static rayAABB(rayStart: Vector2, rayDelta: Vector2, collider: RigidBody, padding: Vector2): CollisionData | null {
+    const scaleX = 1.0 / rayDelta.x;
+    const scaleY = 1.0 / rayDelta.y;
+    const signX = scaleX >= 0 ? 1 : -1;
+    const signY = scaleX >= 0 ? 1 : -1;
+
+    const c0AABB = collider.getChildrenType(AABB)[0];
+    const c0HalfSize = c0AABB.getSize().multiply(0.5);
+    const c0MiddlePos = c0AABB.getGlobalPos().add(c0HalfSize);
+
+    const nearTime = new Vector2((c0MiddlePos.x - signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y - signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
+    const farTime = new Vector2((c0MiddlePos.x + signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y + signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
+    
+    if (nearTime.x > farTime.y || nearTime.y > farTime.x) {
+      return null;
+    }
+
+    const finalNearTime = nearTime.x > nearTime.y ? nearTime.x : nearTime.y;
+    const finalFarTime = farTime.x < farTime.y ? farTime.x : farTime.y;
+
+    if (finalNearTime >= 1 || finalFarTime <= 0) {
+      return null;
+    }
+
+    let collisionNormal: Vector2;
+    const collisionTime = Math.max(Math.min(finalNearTime, 1), 0);
+
+    if (nearTime.x > nearTime.y) {
+      collisionNormal = new Vector2(-signX, 0);
+    } else {
+      collisionNormal = new Vector2(0, -signY);
+    }
+
+    return {
+      collider: collider,
+      time: collisionTime,
+      normal: collisionNormal,
+      position: new Vector2(rayStart.x + rayDelta.x * collisionTime, rayStart.x + rayDelta.y * collisionTime)
+    };
+  }
+
   // RETURN the time and surface normal.
   // Adapted from https://www.gamedev.net/articles/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/
   static sweptAABB(dynamicBox: RigidBody, staticBox: RigidBody, vel: Vector2, dt: number): CollisionData | null {
