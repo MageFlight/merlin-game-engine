@@ -271,7 +271,7 @@ export class PhysicsEngine {
     const signX = scaleX >= 0 ? 1 : -1;
     const signY = scaleX >= 0 ? 1 : -1;
 
-    const c0AABB = collider.getChildrenType(AABB)[0];
+    const c0AABB = collider.getChildrenType<AABB>(AABB)[0];
     const c0HalfSize = c0AABB.getSize().multiply(0.5);
     const c0MiddlePos = c0AABB.getGlobalPos().add(c0HalfSize);
 
