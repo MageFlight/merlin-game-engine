@@ -1,4 +1,4 @@
-import { AABB, CollisionObject, Region, RigidBody } from "../gameObjects/physicsObjects";
+import { AABB, CollisionObject, KinematicBody, Region, RigidBody, StaticBody } from "../gameObjects/physicsObjects";
 import { Vector2 } from "../math/vector2";
 import { log } from "../index";
 
@@ -246,6 +246,58 @@ export class PhysicsEngine {
     return Math.min(dist.x, dist.y);
   }
 
+  static satAABB(sprite0: RigidBody, sprite1: RigidBody): CollisionData | null {
+    const sprite0Pos = sprite0.getGlobalPos();
+    const sprite1Pos = sprite1.getGlobalPos();
+
+    const b1Collider = sprite0.getChildrenType<AABB>(AABB)[0];
+    const b2Collider = sprite1.getChildrenType<AABB>(AABB)[0];
+
+    const b1HalfSize = b1Collider.getSize().multiply(0.5);
+    const b2HalfSize = b2Collider.getSize().multiply(0.5);
+
+    log("b1Pos: ", sprite0Pos, " b1HalfSize: ", b1HalfSize);
+    log("b2Pos: ", sprite1Pos, " b2HalfSize: ", b2HalfSize);
+    const dx = (sprite0Pos.x + b1HalfSize.x) - (sprite1Pos.x + b2HalfSize.x);
+    const px = (b2HalfSize.x + b1HalfSize.x) - Math.abs(dx);
+    if (px <= 0) return null;
+
+    const dy = (sprite1Pos.y + b2HalfSize.y) - (sprite0Pos.y + b1HalfSize.y);
+    const py = (b2HalfSize.y + b1HalfSize.y) - Math.abs(dy);
+    if (py <= 0) return null;
+  
+    log("dx: ", dx, " dy: ", dy);
+    log("ExtraCheck  px: " + px + " py: " + py);
+    if (px < py) {
+      const signX = dx == 0 ? 1 : Math.sign(dx);
+      const collision: CollisionData = {
+        time: 0,
+        normal: new Vector2(signX, 0),
+        position: new Vector2(sprite0Pos.x + px * signX, sprite0Pos.y),
+        collider: sprite1,
+      };
+
+      sprite0.onCollision(collision);
+      sprite1.onCollision(collision);
+      return collision;
+    } else {
+      const signY = dy == 0 ? 1 : Math.sign(dy);
+      log("spriteGlobalPos: ", sprite0Pos.y);
+      log("signY: ", signY, " sub: ", (py * signY));
+      log("expected position: ", new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY));
+      const collision = {
+        time: 0,
+        normal: new Vector2(0, signY),
+        position: new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY),
+        collider: sprite1,
+      };
+
+      sprite0.onCollision(collision);
+      sprite1.onCollision(collision);
+      return collision;
+    }
+  }
+
   /**
    * Checks if two colliders are currently intersecting.
    * @param {AABB} c1 First Collider
@@ -304,6 +356,38 @@ export class PhysicsEngine {
       normal: collisionNormal,
       position: new Vector2(rayStart.x + rayDelta.x * collisionTime, rayStart.x + rayDelta.y * collisionTime)
     };
+  }
+
+  static minkowskiSweptAABB(b1: RigidBody, b2: RigidBody, dt: number): CollisionData | null {
+    let sweepPos: Vector2 = Vector2.zero();
+    let sweepTime: number;
+
+    if (b1 instanceof StaticBody && b2 instanceof StaticBody) {
+      const collision = PhysicsEngine.satAABB(b1, b2);
+      return collision;
+    }
+
+    if (!(b1 instanceof KinematicBody && b2 instanceof KinematicBody)) return null;
+
+    if (b1.getVelocity().equals(Vector2.zero()) && b2.getVelocity().equals(Vector2.zero())) {
+      const collision = PhysicsEngine.satAABB(b1, b2);
+      return collision;
+    }
+
+    const b1Collider = b1.getChildrenType<AABB>(AABB)[0];
+    const b1HalfSize = b1Collider.getSize().multiply(0.5);
+    const b1MidPosition = b1Collider.getPosition().add(b1HalfSize);
+    const relativeVelocity = b1.getVelocity().subtract(b2.getVelocity())
+    const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize);
+    
+    if (collision === null) return collision;
+
+    const direction = relativeVelocity.normalize();
+    const b2HalfSize = b2.getChildrenType<AABB>(AABB)[0].getSize().multiply(0.5);
+
+    collision.position.x = Math.max(Math.min(collision.position.x + direction.x * b2HalfSize.x, b1MidPosition.x - b1HalfSize.x), b1MidPosition.x + b1HalfSize.x);
+    collision.position.y = Math.max(Math.min(collision.position.y + direction.y * b2HalfSize.y, b1MidPosition.y - b1HalfSize.y), b1MidPosition.y + b1HalfSize.y);
+    return collision;
   }
 
   // RETURN the time and surface normal.

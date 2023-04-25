@@ -145,6 +145,17 @@ export class Vector2 {
     return new Vector2(this.x % n, this.y % n);
   }
 
+  normalize(): Vector2 {
+    let length = this.x * this.x + this.y * this.y;
+    if (length > 0) {
+      length = Math.sqrt(length);
+      const inverseLength = 1.0 / length;
+      return new Vector2(this.x * inverseLength, this.y * inverseLength);
+    } else {
+      return new Vector2(1, 0);
+    }
+  }
+
   /**
    * Creates a clone of this vector
    * @returns The clone of this vector
