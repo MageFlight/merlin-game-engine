@@ -29,7 +29,7 @@ export class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
 
-      new SquarePlayer(new Vector2(196, 128), "squarePlayer")
+      new SquarePlayer(new Vector2(128, 128), "squarePlayer")
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "squareCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "#00ffff", "squareTexture")),
 

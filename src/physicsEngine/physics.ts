@@ -95,7 +95,6 @@ export class PhysicsEngine {
     log("bBox size: " + JSON.stringify(broadBox.getSize()));
     log("bBox pos: " + JSON.stringify(broadBox.getPosition()));
     log("dBox pos: " + JSON.stringify(sprite.getGlobalPos()));
-    log("groundpos: ", this.rigidBodies[2].getGlobalPos());
 
     const possibleSprites = [];
     for (let i = 0; i < this.rigidBodies.length; i++) {
@@ -115,58 +114,6 @@ export class PhysicsEngine {
       return null;
     }
 
-    // Check if any are directly overlapping with a static Seperating Axis Theorem test. (https:`//noonat.github.io/intersect/#aabb-vs-aabb)
-    for (let i = 0; i < possibleSprites.length; i++) {
-      const b1Collider = sprite.getChildrenType<AABB>(AABB)[0];
-      const b2Collider = possibleSprites[i].getChildrenType<AABB>(AABB)[0];
-
-      const b2Pos = b2Collider.getGlobalPos();
-
-      const b1HalfSize = b1Collider.getSize().multiply(0.5);
-      const b2HalfSize = b2Collider.getSize().multiply(0.5);
-
-      log("b1Pos: ", spriteGlobalPos, " b1HalfSize: ", b1HalfSize);
-      log("b2Pos: ", b2Pos, " b2HalfSize: ", b2HalfSize);
-      const dx = (spriteGlobalPos.x + b1HalfSize.x) - (b2Pos.x + b2HalfSize.x);
-      const px = (b2HalfSize.x + b1HalfSize.x) - Math.abs(dx);
-      if (px <= 0) continue;
-
-      const dy = (b2Pos.y + b2HalfSize.y) - (spriteGlobalPos.y + b1HalfSize.y);
-      const py = (b2HalfSize.y + b1HalfSize.y) - Math.abs(dy);
-      if (py <= 0) continue;
-    
-      log("dx: ", dx, " dy: ", dy);
-      log("ExtraCheck  px: " + px + " py: " + py);
-      if (px < py) {
-        const signX = dx == 0 ? 1 : Math.sign(dx);
-        const collision: CollisionData = {
-          time: 0,
-          normal: new Vector2(signX, 0),
-          position: new Vector2(spriteGlobalPos.x + px * signX, spriteGlobalPos.y),
-          collider: possibleSprites[i],
-        };
-
-        sprite.onCollision(collision);
-        possibleSprites[i].onCollision(collision);
-        return collision;
-      } else {
-        const signY = dy == 0 ? 1 : Math.sign(dy);
-        log("spriteGlobalPos: ", spriteGlobalPos.y);
-        log("signY: ", signY, " sub: ", (py * signY));
-        log("expected position: ", new Vector2(spriteGlobalPos.x, spriteGlobalPos.y - py * signY));
-        const collision = {
-          time: 0,
-          normal: new Vector2(0, signY),
-          position: new Vector2(spriteGlobalPos.x, spriteGlobalPos.y - py * signY),
-          collider: possibleSprites[i],
-        };
-
-        sprite.onCollision(collision);
-        possibleSprites[i].onCollision(collision);
-        return collision;
-      }
-    }
-
     // Get closest collision
     let closestSprites: RigidBody[] = [];
     let closestDist = Infinity;
@@ -184,13 +131,17 @@ export class PhysicsEngine {
     if (closestSprites.length > 0) {
       let suggestedVelocity = velocity.clone();
       let collisions = [];
+      
       for (let i = 0; i < closestSprites.length; i++) {
-        const collision = PhysicsEngine.sweptAABB(
+        const collision = PhysicsEngine.minkowskiSweptAABB(
           sprite,
           closestSprites[i],
-          suggestedVelocity,
           dt
         );
+
+        log("Collision normal: ", collision?.normal);
+        log("Collision time: ", collision?.time);
+        log("Collision position: ", collision?.position);
 
         if (collision === null) return null;
 
@@ -247,6 +198,7 @@ export class PhysicsEngine {
   }
 
   static satAABB(sprite0: RigidBody, sprite1: RigidBody): CollisionData | null {
+    log("in satAABB()");
     const sprite0Pos = sprite0.getGlobalPos();
     const sprite1Pos = sprite1.getGlobalPos();
 
@@ -318,24 +270,34 @@ export class PhysicsEngine {
 
   // Very helpful explination: https://noonat.github.io/intersect/#aabb-vs-segment
   static rayAABB(rayStart: Vector2, rayDelta: Vector2, collider: RigidBody, padding: Vector2): CollisionData | null {
-    const scaleX = 1.0 / rayDelta.x;
-    const scaleY = 1.0 / rayDelta.y;
+    const scaleX = rayDelta.x == 0 ? Infinity : 1.0 / rayDelta.x;
+    const scaleY = rayDelta.y == 0 ? Infinity : 1.0 / rayDelta.y;
     const signX = scaleX >= 0 ? 1 : -1;
-    const signY = scaleX >= 0 ? 1 : -1;
+    const signY = scaleY >= 0 ? 1 : -1;
 
     const c0AABB = collider.getChildrenType<AABB>(AABB)[0];
     const c0HalfSize = c0AABB.getSize().multiply(0.5);
     const c0MiddlePos = c0AABB.getGlobalPos().add(c0HalfSize);
 
+    log("rayStart: ", rayStart, " rayDelta: ", rayDelta, " padding: ", padding);
+    log("c0 name: ", collider.getName());
+    log("c0 globalPos: ", collider.getGlobalPos());
+    log("b2HalfSize: ", c0HalfSize, " b2MiddlePos: ", c0MiddlePos);
+
     const nearTime = new Vector2((c0MiddlePos.x - signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y - signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
     const farTime = new Vector2((c0MiddlePos.x + signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y + signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
     
+    log("nearTime: ", nearTime, " farTime: ", farTime);
+    log("nearTime.x > farTime.y: ", nearTime.x > farTime.y, " nearTime.y > farTime.x: ", nearTime.y > farTime.x);
+
     if (nearTime.x > farTime.y || nearTime.y > farTime.x) {
       return null;
     }
 
-    const finalNearTime = nearTime.x > nearTime.y ? nearTime.x : nearTime.y;
-    const finalFarTime = farTime.x < farTime.y ? farTime.x : farTime.y;
+    const finalNearTime = nearTime.x < nearTime.y ? nearTime.x : nearTime.y;
+    const finalFarTime = farTime.x > farTime.y ? farTime.x : farTime.y;
+
+    log("finalNearTime: ", finalNearTime, " finalFarTime: ", finalFarTime);
 
     if (finalNearTime >= 1 || finalFarTime <= 0) {
       return null;
@@ -350,6 +312,9 @@ export class PhysicsEngine {
       collisionNormal = new Vector2(0, -signY);
     }
 
+    log("collisionNormal: ", collisionNormal);
+    log("collisionTime: ", collisionTime);
+
     return {
       collider: collider,
       time: collisionTime,
@@ -359,7 +324,6 @@ export class PhysicsEngine {
   }
 
   static minkowskiSweptAABB(b1: RigidBody, b2: RigidBody, dt: number): CollisionData | null {
-    let sweepPos: Vector2 = Vector2.zero();
     let sweepTime: number;
 
     if (b1 instanceof StaticBody && b2 instanceof StaticBody) {
@@ -367,26 +331,39 @@ export class PhysicsEngine {
       return collision;
     }
 
-    if (!(b1 instanceof KinematicBody && b2 instanceof KinematicBody)) return null;
+    const b1Velocity = b1 instanceof KinematicBody ? b1.getVelocity() : Vector2.zero();
+    const b2Velocity = b2 instanceof KinematicBody ? b2.getVelocity() : Vector2.zero();
+    
+    const b1Collider = b1.getChildrenType<AABB>(AABB)[0];
+    const b2Collider = b2.getChildrenType<AABB>(AABB)[0];
 
-    if (b1.getVelocity().equals(Vector2.zero()) && b2.getVelocity().equals(Vector2.zero())) {
+    log("areInside: ", PhysicsEngine.staticAABB(b1Collider, b2Collider))
+    if ((b1Velocity.equals(Vector2.zero()) && b2Velocity.equals(Vector2.zero())) || PhysicsEngine.staticAABB(b1Collider, b2Collider)) {
       const collision = PhysicsEngine.satAABB(b1, b2);
       return collision;
     }
 
-    const b1Collider = b1.getChildrenType<AABB>(AABB)[0];
     const b1HalfSize = b1Collider.getSize().multiply(0.5);
-    const b1MidPosition = b1Collider.getPosition().add(b1HalfSize);
-    const relativeVelocity = b1.getVelocity().subtract(b2.getVelocity())
+    const b1MidPosition = b1Collider.getGlobalPos().add(b1HalfSize);
+    const relativeVelocity = b1Velocity.subtract(b2Velocity);
+
+    log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
+
+
     const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize);
     
     if (collision === null) return collision;
+    log("rawCollisionPosition: ", collision.position);
+    
+    sweepTime = Math.min(Math.max(collision.time - (1e-8), 0), 1);
+    
+    const b2HalfSize = b2Collider.getSize().multiply(0.5);
+    const b2Pos = b2Collider.getGlobalPos().add(b2HalfSize);
 
-    const direction = relativeVelocity.normalize();
-    const b2HalfSize = b2.getChildrenType<AABB>(AABB)[0].getSize().multiply(0.5);
+    log("b2Pos: ", b2Pos, " b2HalfSize: ", b2HalfSize);
+    log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
 
-    collision.position.x = Math.max(Math.min(collision.position.x + direction.x * b2HalfSize.x, b1MidPosition.x - b1HalfSize.x), b1MidPosition.x + b1HalfSize.x);
-    collision.position.y = Math.max(Math.min(collision.position.y + direction.y * b2HalfSize.y, b1MidPosition.y - b1HalfSize.y), b1MidPosition.y + b1HalfSize.y);
+    collision.position = b1MidPosition.add(relativeVelocity.multiply(sweepTime)).subtract(b1HalfSize);
     return collision;
   }
 
