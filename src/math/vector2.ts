@@ -145,6 +145,10 @@ export class Vector2 {
     return new Vector2(this.x % n, this.y % n);
   }
 
+  swapComponents(): Vector2 {
+    return new Vector2(this.y, this.x);
+  }
+
   normalize(): Vector2 {
     let length = this.x * this.x + this.y * this.y;
     if (length > 0) {

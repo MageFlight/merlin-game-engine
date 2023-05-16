@@ -344,6 +344,7 @@ class Player extends KinematicBody {
     const groundPlatform = this.getGroundPlatform(Vector2.up());
 
     this.velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
+    log("moving player with velocity ", this.velocity);
     this.moveAndSlide(physics, dt);
   }
 }

@@ -190,29 +190,42 @@ export class KinematicBody extends RigidBody {
 
       if (!(otherCollider instanceof StaticBody || otherCollider instanceof KinematicBody)) return;
 
-      // This works for kinematic vs. StaticBody
-      if (otherCollider instanceof StaticBody || this.pushable) {
-        log("in otherCollider instanceof StaticBody || this.pushable");
-        const dotprod =
-          this.velocity.x * collision.normal.y + this.velocity.y * collision.normal.x;
-        this.velocity.x = dotprod * collision.normal.y;
-        this.velocity.y = dotprod * collision.normal.x;
-      } else if (!this.pushable && otherCollider.isPushable()) {
-        log("in !this.pushable && otherCollider.isPushable()");
-        log("otherColliderVel: ", otherCollider.getVelocity());
-        const dotprod =
-          otherCollider.velocity.x * collision.normal.y + otherCollider.velocity.y * collision.normal.x;
-        otherCollider.getVelocity().x = dotprod * collision.normal.y;
-        otherCollider.getVelocity().y = dotprod * collision.normal.x;
-      } else {
-        log("in else");
+      const initialVelocity = this.velocity;
+
+      if (otherCollider instanceof KinematicBody && !otherCollider.isPushable() && !this.isPushable()) {
         const collisionMask = collision.normal.abs().add(Vector2.one()).mod(2);
         this.velocity.multiply(collisionMask);
         otherCollider.velocity.multiply(collisionMask);
       }
 
+      // This works for kinematic vs. StaticBody
+      if (otherCollider instanceof StaticBody || this.pushable) {
+        log("in otherCollider instanceof StaticBody || this.pushable");
+
+        if (collision.normal.x != 0 && collision.normal.x > 0 != this.velocity.x > 0) {
+          this.velocity.x = 0;
+        }
+        if (collision.normal.y != 0 && collision.normal.y > 0 != this.velocity.y > 0) {
+          this.velocity.y = 0;
+        }
+      } else if (!this.pushable && otherCollider.isPushable()) {
+        log("in !this.pushable && otherCollider.isPushable()");
+        log("otherColliderVel: ", otherCollider.getVelocity());
+
+        const otherColliderNormal = collision.normal.multiply(-1);
+
+        if (otherColliderNormal.x != 0 && otherColliderNormal.x > 0 != this.velocity.x > 0) {
+          this.velocity.x = 0;
+        }
+        if (otherColliderNormal.x != 0 && otherColliderNormal.y > 0 != this.velocity.y > 0) {
+          this.velocity.y = 0;
+        }
+      }
+
       if (otherCollider instanceof KinematicBody && (this.pushable || otherCollider.isPushable())) {
-        const initialVelocity = this.velocity;
+        log("initialVelocity: ", initialVelocity);
+        log("OtherCollider Velocity: ", otherCollider.getVelocity());
+        log("Predicted OtherFinal: ", otherCollider.getVelocity().add(initialVelocity));
         if (this.pushable) this.velocity = this.velocity.add(otherCollider.getVelocity());
         if (otherCollider.isPushable()) otherCollider.setVelocity(otherCollider.getVelocity().add(initialVelocity));
         log("OtherFinalMovement: ", otherCollider.getVelocity());

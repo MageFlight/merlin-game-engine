@@ -334,28 +334,26 @@ export class PhysicsEngine {
     const b1Velocity = b1 instanceof KinematicBody ? b1.getVelocity() : Vector2.zero();
     const b2Velocity = b2 instanceof KinematicBody ? b2.getVelocity() : Vector2.zero();
     
+    const relativeVelocity = b1Velocity.subtract(b2Velocity);
+    
     const b1Collider = b1.getChildrenType<AABB>(AABB)[0];
     const b2Collider = b2.getChildrenType<AABB>(AABB)[0];
 
     log("areInside: ", PhysicsEngine.staticAABB(b1Collider, b2Collider))
-    if ((b1Velocity.equals(Vector2.zero()) && b2Velocity.equals(Vector2.zero())) || PhysicsEngine.staticAABB(b1Collider, b2Collider)) {
+    if (relativeVelocity.equals(Vector2.zero()) && PhysicsEngine.staticAABB(b1Collider, b2Collider)) {
       const collision = PhysicsEngine.satAABB(b1, b2);
       return collision;
     }
 
     const b1HalfSize = b1Collider.getSize().multiply(0.5);
     const b1MidPosition = b1Collider.getGlobalPos().add(b1HalfSize);
-    const relativeVelocity = b1Velocity.subtract(b2Velocity);
 
     log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
-
 
     const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize);
     
     if (collision === null) return collision;
     log("rawCollisionPosition: ", collision.position);
-    
-    sweepTime = Math.min(Math.max(collision.time - (1e-8), 0), 1);
     
     const b2HalfSize = b2Collider.getSize().multiply(0.5);
     const b2Pos = b2Collider.getGlobalPos().add(b2HalfSize);
@@ -363,7 +361,14 @@ export class PhysicsEngine {
     log("b2Pos: ", b2Pos, " b2HalfSize: ", b2HalfSize);
     log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
 
-    collision.position = b1MidPosition.add(relativeVelocity.multiply(sweepTime)).subtract(b1HalfSize);
+    const collisionMask = collision.normal.abs();
+
+    const snapPosition = b2Pos.add(b2HalfSize.add(b1HalfSize).multiply(collision.normal)).multiply(collisionMask);
+
+    collision.position = b1MidPosition.add(relativeVelocity.multiply(collision.time)).multiply(collisionMask.swapComponents()).add(snapPosition).subtract(b1HalfSize);
+
+    log("b1: ", b1.getName(), " b2: ", b2.getName());
+    log("finalPositionInSweptAABB: ", collision.position);
     return collision;
   }
 
