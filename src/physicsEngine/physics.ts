@@ -294,8 +294,8 @@ export class PhysicsEngine {
       return null;
     }
 
-    const finalNearTime = nearTime.x < nearTime.y ? nearTime.x : nearTime.y;
-    const finalFarTime = farTime.x > farTime.y ? farTime.x : farTime.y;
+    const finalNearTime = Math.min(rayDelta.x == 0 ? Infinity : nearTime.x, rayDelta.y == 0 ? Infinity : nearTime.y);
+    const finalFarTime = Math.max(rayDelta.x == 0 ? -Infinity : farTime.x, rayDelta.y == 0 ? -Infinity : farTime.y);
 
     log("finalNearTime: ", finalNearTime, " finalFarTime: ", finalFarTime);
 
@@ -306,14 +306,16 @@ export class PhysicsEngine {
     let collisionNormal: Vector2;
     const collisionTime = Math.max(Math.min(finalNearTime, 1), 0);
 
+    log("nearTime.x > nearTime.y: ", nearTime.x > nearTime.y);
+
     if (nearTime.x > nearTime.y) {
       collisionNormal = new Vector2(-signX, 0);
     } else {
       collisionNormal = new Vector2(0, -signY);
     }
 
-    log("collisionNormal: ", collisionNormal);
-    log("collisionTime: ", collisionTime);
+    log("collisionNormal1: ", collisionNormal);
+    log("collisionTime1: ", collisionTime);
 
     return {
       collider: collider,
@@ -334,6 +336,9 @@ export class PhysicsEngine {
     const b1Velocity = b1 instanceof KinematicBody ? b1.getVelocity() : Vector2.zero();
     const b2Velocity = b2 instanceof KinematicBody ? b2.getVelocity() : Vector2.zero();
     
+    log("b1Velocity: ", b1Velocity);
+    log("b2Velocity: ", b2Velocity);
+
     const relativeVelocity = b1Velocity.subtract(b2Velocity);
     
     const b1Collider = b1.getChildrenType<AABB>(AABB)[0];

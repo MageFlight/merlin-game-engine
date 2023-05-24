@@ -64,13 +64,13 @@ class SquarePlayer extends KinematicBody {
   override update(dt: number): void {
     log("Update squarePlayer");
     log("Square Velocity: ", this.velocity);
-    if (keyboardHandler.keyJustPressed("ArrowRight") && this.velocity.equals(Vector2.zero())) {
+    if (keyboardHandler.isKeyDown("ArrowRight") && this.velocity.equals(Vector2.zero())) {
       this.velocity.x = this.speed;
-    } else if (keyboardHandler.keyJustPressed("ArrowLeft") && this.velocity.equals(Vector2.zero())) {
+    } else if (keyboardHandler.isKeyDown("ArrowLeft") && this.velocity.equals(Vector2.zero())) {
       this.velocity.x = -this.speed;
-    } else if (keyboardHandler.keyJustPressed("ArrowUp") && this.velocity.equals(Vector2.zero())) {
+    } else if (keyboardHandler.isKeyDown("ArrowUp") && this.velocity.equals(Vector2.zero())) {
       this.velocity.y = -this.speed;
-    } else if (keyboardHandler.keyJustPressed("ArrowDown") && this.velocity.equals(Vector2.zero())) {
+    } else if (keyboardHandler.isKeyDown("ArrowDown") && this.velocity.equals(Vector2.zero())) {
       this.velocity.y = this.speed;
     }
 
@@ -80,6 +80,8 @@ class SquarePlayer extends KinematicBody {
   }
 
   override physicsUpdate(physics: PhysicsEngine, dt: number): void {
+    log("");
+    log("movingSquarePlayer");
     this.moveAndSlide(physics, dt);
   }
 
@@ -217,7 +219,9 @@ class MovementController {
    * @param {PhysicsEngine} physics The physics engine used in physics calculations
    * @returns The desired velocity after taking into account the current velocity and constraits.
    */
-  computeVelocity(desiredHorizontalDirection: number, jumpDesired: boolean, groundPlatform: RigidBody | null, downDirection: number, physics: PhysicsEngine, dt: number) {
+  computeVelocity(updatedVelocity: Vector2, desiredHorizontalDirection: number, jumpDesired: boolean, groundPlatform: RigidBody | null, downDirection: number, physics: PhysicsEngine, dt: number) {
+    this.velocity = updatedVelocity;
+    log("playerVelocity: ", this.velocity);
     const onGround = groundPlatform != null;
     log("onGround: ", onGround);
     this.jumped = this.jumped && !onGround;
@@ -235,6 +239,7 @@ class MovementController {
         this.coyoteJumpLocked = true;
       }, this.movementParameters.coyoteTime, false);
     }
+    log("playerVelocity: ", this.velocity);
 
     // Horizontal Movement
     let acceleration = 0;
@@ -248,11 +253,14 @@ class MovementController {
       }
     }
 
+    log("playerVelocity: ", this.velocity);
+
     acceleration /= onGround ? groundPlatform.getFriction() : this.movementParameters.airFriction;
     this.velocity.x = Utils.moveTowards(this.velocity.x, desiredHorizontalDirection * this.movementParameters.maxSpeed, acceleration * dt);
 
     //// Vertical Movement ////
     // Jumping
+    log("playerVelocity: ", this.velocity);
     if (onGround) this.jumpsUsed = 0;
 
     if (!this.attemptingJump && jumpDesired) {
@@ -285,6 +293,8 @@ class MovementController {
 
       this.velocity.y += jumpSpeed;
     }
+    log("playerVelocity: ", this.velocity);
+
 
     // Special Gravity
 
@@ -296,8 +306,12 @@ class MovementController {
       this.gravityMultiplier = downDirection;
     }
 
+    log("playerVelocity: ", this.velocity);
+    log("gravity * gravityMultiplier * dt: ", physics.getGravity() * this.gravityMultiplier * dt);
+
     // Apply Gravity
     this.velocity.y += physics.getGravity() * this.gravityMultiplier * dt;
+    log("playerVelocity: ", this.velocity);
 
     return this.velocity;
   }
@@ -343,7 +357,9 @@ class Player extends KinematicBody {
   override physicsUpdate(physics: PhysicsEngine, dt: number) {
     const groundPlatform = this.getGroundPlatform(Vector2.up());
 
-    this.velocity = this.movementController.computeVelocity(this.horizontalDirection, keyboardHandler.keyJustPressed("Space"), groundPlatform, 1, physics, dt);
+    log("PlayerVel preUpdate: ", this.velocity);
+    this.velocity = this.movementController.computeVelocity(this.velocity, this.horizontalDirection, keyboardHandler.isKeyDown("Space"), groundPlatform, 1, physics, dt);
+    log("");
     log("moving player with velocity ", this.velocity);
     this.moveAndSlide(physics, dt);
   }

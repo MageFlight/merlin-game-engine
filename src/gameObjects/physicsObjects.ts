@@ -168,6 +168,81 @@ export class KinematicBody extends RigidBody {
     return physics.checkCollisions(this, this.velocity, [], dt);
   }
 
+  protected resolvePushableVsPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData) {
+    log("Resolving pushable vs pushable");
+    log("colliderA: ", colliderA.getName(), " colliderB: ", colliderB.getName());
+    // Go to the global position
+    colliderA.position = colliderA.position.add(collision.position.subtract(colliderA.getGlobalPos()));
+
+    // Swap velocities
+    const colliderAVelocity = colliderA.getVelocity();
+    colliderA.velocity = colliderB.velocity.clone();
+    colliderB.velocity = colliderAVelocity;
+  }
+
+  protected resolvePushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody | KinematicBody, collision: CollisionData) {
+    log("Resolving pushable vs static");
+    log("colliderA: ", colliderA.getName(), " colliderB: ", colliderB.getName());
+    // Go to the global collision position
+    colliderA.position = colliderA.position.add(collision.position.subtract(colliderA.getGlobalPos()));
+
+    // Reset the velocity of colliderA along the collision normal
+    colliderA.velocity = colliderA.velocity.multiply(collision.normal.abs().swapComponents());
+  }
+
+  protected resolvePushableVsNonPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData) {
+    log("Resolving pushable vs non-pushable");
+    log("colliderA: ", colliderA.getName(), " colliderB: ", colliderB.getName());
+    // The first section of collision reseolution of pushable v. non-pushable is the same as pushable v. static.
+    this.resolvePushableVsStatic(colliderA, colliderB, collision);
+    
+    // A non-moving, non-pushable kinematicBody acts the same as a StaticBody, so we only have to resolve pushable vs static
+    if (colliderB.velocity.equals(Vector2.zero())) {
+      return;
+    }
+
+    // Add the velocity of ColliderB along the collision normal
+    colliderA.velocity = colliderA.velocity.add(colliderB.velocity.multiply(collision.normal.abs()));
+  }
+
+  protected resolveNonPushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody | KinematicBody, collision: CollisionData) {
+    log("Resolving non-pushable vs static");
+    log("colliderA: ", colliderA.getName(), " colliderB: ", colliderB.getName());
+    // The end result of Non-Pushable vs Static and Pushable vs Static is the same.
+    this.resolvePushableVsStatic(colliderA, colliderB, collision);
+  }
+
+  protected resolveNonPushableVsNonPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData) {
+    log("Resolving non-pushable vs non-pushable");
+    log("colliderA: ", colliderA.getName(), " colliderB: ", colliderB.getName());
+    // The first part of resolving NonPushable vs Non-Pushable collision is the same as Non-Pushable vs. Static
+    this.resolveNonPushableVsStatic(colliderA, colliderB, collision);
+
+    // Reset the velocity of colliderB along the collision normal
+    colliderB.velocity = colliderB.velocity.multiply(collision.normal.abs().swapComponents());
+  }
+
+  protected resolveCollision(collision: CollisionData) {
+    const otherCollider = collision.collider;
+    if (!(otherCollider instanceof StaticBody || otherCollider instanceof KinematicBody)) {
+      throw new Error("Unsupported rigidbody type.");
+    }
+    
+    if (otherCollider instanceof StaticBody) {
+      this.resolvePushableVsStatic(this, otherCollider, collision);
+    } else if (this.pushable && otherCollider.pushable) {
+      this.resolvePushableVsPushable(this, otherCollider, collision);
+    } else if (this.pushable && !otherCollider.pushable) {
+      this.resolvePushableVsNonPushable(this, otherCollider, collision);
+    } else if (!this.pushable && otherCollider.pushable) {
+      this.resolvePushableVsNonPushable(otherCollider, this, collision);
+    } else if (!this.pushable && !otherCollider.pushable) {
+      this.resolveNonPushableVsNonPushable(this, otherCollider, collision);
+    } else {
+      throw new Error("Unsupported combination of pushable and unpushable colliders.");
+    }
+  }
+
   /**
    * Moves this sprite by the movement vector and slides along the surface it encounters.
    * @param {Number} dt Delta time between frames
@@ -178,58 +253,14 @@ export class KinematicBody extends RigidBody {
 
     let excludeList: RigidBody[] = [];
     let collision: CollisionData | null = physics.checkCollisions(this, this.velocity, excludeList, dt);
+    if (collision === null) log("Null Collision")
     while (collision != null && !collision.normal.equals(Vector2.zero()) && slidesLeft > 0) {
       log("collision!!!!!!!!!!!!!!");
       log("collisionTime: " + collision.time);
       log("Position: " + JSON.stringify(collision.position));
       log("normal: " + JSON.stringify(collision.normal));
 
-      const otherCollider = collision.collider;
-
-      this.position = this.position.add(collision.position.subtract(this.getGlobalPos()));
-
-      if (!(otherCollider instanceof StaticBody || otherCollider instanceof KinematicBody)) return;
-
-      const initialVelocity = this.velocity;
-
-      if (otherCollider instanceof KinematicBody && !otherCollider.isPushable() && !this.isPushable()) {
-        const collisionMask = collision.normal.abs().add(Vector2.one()).mod(2);
-        this.velocity.multiply(collisionMask);
-        otherCollider.velocity.multiply(collisionMask);
-      }
-
-      // This works for kinematic vs. StaticBody
-      if (otherCollider instanceof StaticBody || this.pushable) {
-        log("in otherCollider instanceof StaticBody || this.pushable");
-
-        if (collision.normal.x != 0 && collision.normal.x > 0 != this.velocity.x > 0) {
-          this.velocity.x = 0;
-        }
-        if (collision.normal.y != 0 && collision.normal.y > 0 != this.velocity.y > 0) {
-          this.velocity.y = 0;
-        }
-      } else if (!this.pushable && otherCollider.isPushable()) {
-        log("in !this.pushable && otherCollider.isPushable()");
-        log("otherColliderVel: ", otherCollider.getVelocity());
-
-        const otherColliderNormal = collision.normal.multiply(-1);
-
-        if (otherColliderNormal.x != 0 && otherColliderNormal.x > 0 != this.velocity.x > 0) {
-          this.velocity.x = 0;
-        }
-        if (otherColliderNormal.x != 0 && otherColliderNormal.y > 0 != this.velocity.y > 0) {
-          this.velocity.y = 0;
-        }
-      }
-
-      if (otherCollider instanceof KinematicBody && (this.pushable || otherCollider.isPushable())) {
-        log("initialVelocity: ", initialVelocity);
-        log("OtherCollider Velocity: ", otherCollider.getVelocity());
-        log("Predicted OtherFinal: ", otherCollider.getVelocity().add(initialVelocity));
-        if (this.pushable) this.velocity = this.velocity.add(otherCollider.getVelocity());
-        if (otherCollider.isPushable()) otherCollider.setVelocity(otherCollider.getVelocity().add(initialVelocity));
-        log("OtherFinalMovement: ", otherCollider.getVelocity());
-      }
+      this.resolveCollision(collision);
 
       if (!collision.normal.equals(Vector2.zero()) && collision.collider !== null) {
         this.lastSlideCollisions.push(collision);
