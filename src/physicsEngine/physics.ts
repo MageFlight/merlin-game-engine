@@ -419,9 +419,9 @@ export class PhysicsEngine {
   }
 
   // Very helpful explination: https://noonat.github.io/intersect/#aabb-vs-segment
-  static rayAABB(rayStart: Vector2, rayDelta: Vector2, collider: RigidBody, padding: Vector2): CollisionData | null {
-    const scaleX = rayDelta.x == 0 ? Infinity : 1.0 / rayDelta.x;
-    const scaleY = rayDelta.y == 0 ? Infinity : 1.0 / rayDelta.y;
+  static rayAABB(rayStart: Vector2, rayDelta: Vector2, collider: RigidBody, padding: Vector2, dt: number): CollisionData | null {
+    const scaleX = rayDelta.x == 0 ? Infinity : 1.0 / (rayDelta.x * dt);
+    const scaleY = rayDelta.y == 0 ? Infinity : 1.0 / (rayDelta.y * dt);
     const signX = scaleX >= 0 ? 1 : -1;
     const signY = scaleY >= 0 ? 1 : -1;
 
@@ -474,7 +474,7 @@ export class PhysicsEngine {
       collider: collider,
       time: collisionTime,
       normal: collisionNormal,
-      position: new Vector2(rayStart.x + rayDelta.x * collisionTime, rayStart.x + rayDelta.y * collisionTime)
+      position: new Vector2(rayStart.x + rayDelta.x * collisionTime, rayStart.y + rayDelta.y * collisionTime)
     };
   }
 
@@ -508,7 +508,7 @@ export class PhysicsEngine {
 
     log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
 
-    const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize);
+    const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize, dt);
     
     if (collision === null) return collision;
     log("rawCollisionPosition: ", collision.position);
