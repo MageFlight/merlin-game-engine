@@ -44,6 +44,8 @@ export class PhysicsEngine {
     for (const colliderA of this.rigidBodies) {
       log("");
       log("ColliderA: ", colliderA.getName());
+      colliderA.resetFrameColisions();
+
       if (!(colliderA instanceof KinematicBody)) continue;
 
       log("Checking collision for ", colliderA.getName());
@@ -55,7 +57,7 @@ export class PhysicsEngine {
         frameCollisions.push(new CollisionResolutionData(
           false,
           colliderA,
-          colliderA.getGlobalPos().add(colliderA.getVelocity()),
+          colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)),
           colliderA.getVelocity())
         );
 
@@ -63,7 +65,7 @@ export class PhysicsEngine {
       }
 
       colliderA.onCollision(collision);
-      collision.collider.onCollision(collision);
+      colliderA.logCollision(collision);
 
       log("Collision ocurred");
       log("CollisionTime: ", collision.time, " position: ", collision.position, " normal: ", collision.normal, " collider: ", collision.collider.getName());
@@ -526,7 +528,7 @@ export class PhysicsEngine {
       log("snapCorrection: ", snapCorrection);
       log("snapCorrectionFinal: ", snapCorrection.subtract(b1HalfSize).multiply(collisionMask));
 
-      collision.position = b1MidPosition.add(b1Velocity).multiply(collisionMask.swapComponents()).add(snapCorrection).subtract(b1HalfSize);
+      collision.position = b1MidPosition.add(b1Velocity.multiply(dt)).multiply(collisionMask.swapComponents()).add(snapCorrection).subtract(b1HalfSize);
     } else {
       collision.position = collision.position.subtract(b1HalfSize);
     }

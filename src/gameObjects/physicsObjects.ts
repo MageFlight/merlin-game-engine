@@ -105,9 +105,18 @@ export class Region extends CollisionObject {
 
 export class RigidBody extends Region {
   protected friction: number = 0.8;
+  protected lastFrameCollisions: CollisionData[] = [];
 
   constructor(position: Vector2, size: Vector2, friction: number, name: string) {
     super(position, size, name);
+  }
+
+  public resetFrameColisions(): void {
+    this.lastFrameCollisions = [];
+  }
+
+  public logCollision(collision: CollisionData): void {
+    this.lastFrameCollisions.push(collision);
   }
 
   public getFriction(): number {
@@ -130,7 +139,6 @@ export class StaticBody extends RigidBody {
 }
 
 export class KinematicBody extends RigidBody {
-  protected lastSlideCollisions: CollisionData[] = [];
   protected pushable: boolean;
   protected velocity: Vector2;
 
@@ -175,7 +183,7 @@ export class KinematicBody extends RigidBody {
    * @deprecated doesn't do anything
    */
   public moveAndSlide(physics: PhysicsEngine, dt: number, slidesLeft: number = 4) {
-    this.lastSlideCollisions = [];
+    this.lastFrameCollisions = [];
 
     let excludeList: RigidBody[] = [];
     let collision: CollisionData | null = physics.checkCollisions(this, this.velocity, excludeList, dt);
@@ -187,7 +195,7 @@ export class KinematicBody extends RigidBody {
       log("normal: " + JSON.stringify(collision.normal));
 
       if (!collision.normal.equals(Vector2.zero()) && collision.collider !== null) {
-        this.lastSlideCollisions.push(collision);
+        this.lastFrameCollisions.push(collision);
         excludeList.push(collision.collider);
         slidesLeft--;
       } else {
@@ -205,20 +213,20 @@ export class KinematicBody extends RigidBody {
   }
 
   isOnGround(upDirection: Vector2): boolean {
-    log("Looking in last slides: " + this.lastSlideCollisions.length);
-    for (let i = 0; i < this.lastSlideCollisions.length; i++) {
-      if (this.lastSlideCollisions[i].normal.equals(upDirection)) return true;
+    log("Looking in last slides: " + this.lastFrameCollisions.length);
+    for (let i = 0; i < this.lastFrameCollisions.length; i++) {
+      if (this.lastFrameCollisions[i].normal.equals(upDirection)) return true;
     }
 
     return false;
   }
 
   getGroundPlatform(upDirection: Vector2): RigidBody | null {
-    log("getting ground platform in length ", this.lastSlideCollisions.length);
+    log("getting ground platform in length ", this.lastFrameCollisions.length);
 
-    for (let i = 0; i < this.lastSlideCollisions.length; i++) {
-      if (this.lastSlideCollisions[i].normal.equals(upDirection))
-        return this.lastSlideCollisions[i].collider;
+    for (let i = 0; i < this.lastFrameCollisions.length; i++) {
+      if (this.lastFrameCollisions[i].normal.equals(upDirection))
+        return this.lastFrameCollisions[i].collider;
     }
 
     return null;
