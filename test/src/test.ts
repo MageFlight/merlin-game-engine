@@ -80,9 +80,9 @@ class SquarePlayer extends KinematicBody {
   }
 
   override physicsUpdate(physics: PhysicsEngine, dt: number): void {
-    log("");
-    log("movingSquarePlayer");
-    this.moveAndSlide(physics, dt);
+    // log("");
+    // log("movingSquarePlayer");
+    // this.moveAndSlide(physics, dt);
   }
 
   die() {
@@ -359,8 +359,8 @@ class Player extends KinematicBody {
 
     log("PlayerVel preUpdate: ", this.velocity);
     this.velocity = this.movementController.computeVelocity(this.velocity, this.horizontalDirection, keyboardHandler.isKeyDown("Space"), groundPlatform, 1, physics, dt);
-    log("");
-    log("moving player with velocity ", this.velocity);
-    this.moveAndSlide(physics, dt);
+    // log("");
+    // log("moving player with velocity ", this.velocity);
+    // this.moveAndSlide(physics, dt);
   }
 }

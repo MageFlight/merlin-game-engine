@@ -39,7 +39,7 @@ export class GameObjectTree {
         this.physicsUpdateObject(this.gameObjects[i], dt);
       }
 
-      this.physicsEngine.interactRegions();
+      this.physicsEngine.update(dt);
     }
 
     this.gameObjectRemoveQueue.forEach(obj => this.gameObjects.splice(this.gameObjects.indexOf(obj), 1));
