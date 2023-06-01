@@ -42,3 +42,5 @@ Collider C's next movement is ambigious because Collider C doesn't know that Col
  1. Update all of the pushable kinematicBodies before the unpushables.
  2. If the pushable kinematicBody hits an unpushable kinematic body, or a staticBody, flag the collider (pushable kinematicBody) as unpushable along the collision normal.
  3. If an unpushable kinematicBody collides with a pushable, check for the unpushable flag, and if it was unpushable, use the unpushable vs. unpushable resolution for that axis only. On the other axis, treat it like a normal pushable vs. unpushable collision.
+
+make disable collision work
