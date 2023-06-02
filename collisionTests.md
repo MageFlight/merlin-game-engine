@@ -44,3 +44,42 @@ Collider C's next movement is ambigious because Collider C doesn't know that Col
  3. If an unpushable kinematicBody collides with a pushable, check for the unpushable flag, and if it was unpushable, use the unpushable vs. unpushable resolution for that axis only. On the other axis, treat it like a normal pushable vs. unpushable collision.
 
 make disable collision work
+
+
+## Pushable vs. static
+
+ 1. Collider A goes to the side of Collider B that corresponds to the normal and moves under its own velocity on the other
+ 2. The velocity of Collider A is reset along the normal
+
+## Pushable vs. Pushable
+
+Collider A goes to collision position along the normal, and moves under its own velocity on the other, Collider B goes to the side of Collider A that corresponds to the normal, and moves under its own velocity on the other.
+
+Swap velocities
+
+## Pushable vs. Unpushable
+
+ 1. Collider B moves by its velocity times delta time
+ 2. Collider A goes to the side of Collider B that corresponds to the inverse of the normal and moves under its own velocity on the other.
+ 3. The relative velocity along the collision normal is added to the velocity of Collider A
+
+## Unpushable vs. Pushable
+
+ 1. Collider A moves by its velocity times delta time
+ 2. Collider B goes to the side of Collider A that corresponds to the normal and moves under its own velocity on the other.
+ 3. The relative velocity along the collision normal is added to the velocity of Collider A
+
+## Unpushable vs. Static
+
+ 1. Collider A goes to the side of Collider B that corresponds to the normal and moves under its own velocity on the other
+ 2. The velocity of Collider A is reset along the normal
+
+## Unpushable vs. Unpushable
+
+ 1. Collider A goes to the collision position along the normal, and moves under its own velocity on the other
+ 2. Collider B goes to the side of Collider A that corresponds to the normal and moves under its own velocity on the other
+ 2. Along the normal, the velocities of both colliders are set to 0
+
+## Static vs. Static
+
+Should never happen
