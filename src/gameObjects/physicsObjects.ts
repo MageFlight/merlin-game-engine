@@ -164,54 +164,6 @@ export class KinematicBody extends RigidBody {
     this.velocity = newVelocity;
   }
 
-  /**
-   * Moves this sprite by the movement vector and stops if it encounters a collider.
-   * @param {Vector2} movement The vector to move by.
-   * @param {PhysicsEngine} physics
-   * @param {Number} dt Delta time
-   * @returns The information about the collision, or null if there was none.
-   * @deprecated
-   */
-   public moveAndCollide(physics: PhysicsEngine, dt: number): CollisionData | null {
-    return physics.checkCollisions(this, this.velocity, [], dt);
-  }
-
-  /**
-   * Moves this sprite by the movement vector and slides along the surface it encounters.
-   * @param {Number} dt Delta time between frames
-   * @param {Number} slidesLeft Maximum number of collisions
-   * @deprecated doesn't do anything
-   */
-  public moveAndSlide(physics: PhysicsEngine, dt: number, slidesLeft: number = 4) {
-    this.lastFrameCollisions = [];
-
-    let excludeList: RigidBody[] = [];
-    let collision: CollisionData | null = physics.checkCollisions(this, this.velocity, excludeList, dt);
-    if (collision === null) log("Null Collision")
-    while (collision != null && !collision.normal.equals(Vector2.zero()) && slidesLeft > 0) {
-      log("collision!!!!!!!!!!!!!!");
-      log("collisionTime: " + collision.time);
-      log("Position: " + JSON.stringify(collision.position));
-      log("normal: " + JSON.stringify(collision.normal));
-
-      if (!collision.normal.equals(Vector2.zero()) && collision.collider !== null) {
-        this.lastFrameCollisions.push(collision);
-        excludeList.push(collision.collider);
-        slidesLeft--;
-      } else {
-        return;
-      }
-
-      collision = physics.checkCollisions(this, this.velocity, excludeList, dt);
-    }
-
-    log("FinalMovement: " + JSON.stringify(this.velocity));
-    this.position = this.position.add(this.velocity.multiply(dt));
-    log("Final position: " + JSON.stringify(this.position));
-    log("result: " + JSON.stringify(this.position));
-    log("slidesLeft: " + slidesLeft);
-  }
-
   isOnGround(upDirection: Vector2): boolean {
     log("Looking in last slides: " + this.lastFrameCollisions.length);
     for (let i = 0; i < this.lastFrameCollisions.length; i++) {
