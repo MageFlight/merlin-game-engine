@@ -228,7 +228,7 @@ export class PhysicsEngine {
 
     const positionMask = collision.normal.swapComponents().abs();
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider A on the other.
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal));
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal.multiply(-1)));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);    
 
     return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
