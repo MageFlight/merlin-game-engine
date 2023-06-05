@@ -166,19 +166,28 @@ export class KinematicBody extends RigidBody {
 
   isOnGround(upDirection: Vector2): boolean {
     log("Looking in last slides: " + this.lastFrameCollisions.length);
-    for (let i = 0; i < this.lastFrameCollisions.length; i++) {
-      if (this.lastFrameCollisions[i].normal.equals(upDirection)) return true;
-    }
-
-    return false;
+    return this.lastFrameCollisions.some((collision: CollisionData) => {
+      const isColliderA = collision.colliderA === this;
+      const collisionNormal = isColliderA ? collision.normal : collision.normal.multiply(-1);
+      return collisionNormal.equals(upDirection);
+    });
   }
 
   getGroundPlatform(upDirection: Vector2): RigidBody | null {
     log("getting ground platform in length ", this.lastFrameCollisions.length);
 
     for (let i = 0; i < this.lastFrameCollisions.length; i++) {
-      if (this.lastFrameCollisions[i].normal.equals(upDirection))
-        return this.lastFrameCollisions[i].collider;
+      const collision = this.lastFrameCollisions[i];
+      const isColliderA = collision.colliderA === this;
+      const collisionNormal = isColliderA ? collision.normal : collision.normal.multiply(-1);
+
+      if (collisionNormal.equals(upDirection)) {
+        if (isColliderA) {
+          return collision.colliderB !== undefined ? collision.colliderB : null;
+        } else {
+          return collision.colliderA;
+        }
+      }
     }
 
     return null;

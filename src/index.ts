@@ -38,41 +38,45 @@ export class MerlinEngine {
   }
 
   private async frame(startTime: number) {
-    this.dt = startTime - this.prevStartTime;
-    this.prevStartTime = startTime;
+    try {
+      this.dt = startTime - this.prevStartTime;
+      this.prevStartTime = startTime;
 
-    mouseHandeler.update();
-    keyboardHandler.update();
+      mouseHandeler.update();
+      keyboardHandler.update();
 
-    if (keyboardHandler.keyJustReleased("KeyO")) this.paused = false;
-    if (keyboardHandler.keyJustReleased("KeyP")) this.paused = !this.paused;
+      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = false;
+      if (keyboardHandler.keyJustReleased("KeyP")) this.paused = !this.paused;
 
-    if (this.dt >= 0 && !this.paused) {
-      Utils.timerUpdate(this.dt);
+      if (this.dt >= 0 && !this.paused) {
+        Utils.timerUpdate(this.dt);
 
-      for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-        const state: GameState = this.gameStateStack[i];
-        if (state && !state.isPaused()) {
-          state.update(this.dt);
+        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+          const state: GameState = this.gameStateStack[i];
+          if (state && !state.isPaused()) {
+            state.update(this.dt);
+          }
+        }
+
+        renderer.clear('#0000ff');
+        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+          const state: GameState = this.gameStateStack[i];
+          if (state && !state.isPaused()) {
+            state.draw();
+          }
         }
       }
 
-      renderer.clear('#0000ff');
-      for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-        const state: GameState = this.gameStateStack[i];
-        if (state && !state.isPaused()) {
-          state.draw();
-        }
-      }
+      if (this.logActive && !this.paused) logger.update();
+      
+      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = true;
+      if (keyboardHandler.keyJustReleased("KeyI")) this.logActive = !this.logActive;
+
+      this.gameStateStack = [...this.gameStateStackBuffer];
+      requestAnimationFrame(startTime => this.frame(startTime));
+    } catch (e: any) {
+      alert(e.stack);
     }
-
-    if (this.logActive && !this.paused) logger.update();
-    
-    if (keyboardHandler.keyJustReleased("KeyO")) this.paused = true;
-    if (keyboardHandler.keyJustReleased("KeyI")) this.logActive = !this.logActive;
-
-    this.gameStateStack = [...this.gameStateStackBuffer];
-    requestAnimationFrame(startTime => this.frame(startTime));
   }
 
   /**

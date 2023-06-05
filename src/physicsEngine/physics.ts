@@ -6,10 +6,13 @@ export interface CollisionData {
   time: number,
   normal: Vector2,
   position: Vector2,
-  collider: RigidBody,
+  colliderA: RigidBody,
+  colliderB?: RigidBody,
 }
 
 class CollisionResolutionData {
+  collision: CollisionData | null;
+
   colliderA: KinematicBody;
   colliderAFinalPosition: Vector2;
   colliderAFinalVelocity: Vector2;
@@ -18,7 +21,9 @@ class CollisionResolutionData {
   colliderBFinalPosition?: Vector2;
   colliderBFinalVelocity?: Vector2
 
-  constructor(colliderA: KinematicBody, colliderAFinalPosition: Vector2, colldierAFinalVelocity: Vector2, colliderB?: KinematicBody | StaticBody, colliderBFinalPosition?: Vector2, colliderBFinalVelocity?: Vector2) {
+  constructor(collision: CollisionData | null, colliderA: KinematicBody, colliderAFinalPosition: Vector2, colldierAFinalVelocity: Vector2, colliderB?: KinematicBody | StaticBody, colliderBFinalPosition?: Vector2, colliderBFinalVelocity?: Vector2) {
+    this.collision = collision;
+    
     this.colliderA = colliderA;
     this.colliderAFinalPosition = colliderAFinalPosition;
     this.colliderAFinalVelocity = colldierAFinalVelocity;
@@ -43,11 +48,9 @@ export class PhysicsEngine {
   public update(dt: number) {
     log("In physics update()");
 
-    const frameCollisions: CollisionResolutionData[] = [];
-
     let specialUnpushables: Map<KinematicBody, Vector2> = new Map();
 
-    let collidedBodies: Map<RigidBody, RigidBody[]> = new Map();
+    let bodyResolutions: Map<RigidBody, CollisionResolutionData[]> = new Map();
 
     const pushableKinematicBodies = this.rigidBodies.filter(body => body instanceof KinematicBody && body.isPushable());
     const unpushableKinematicBodies = this.rigidBodies.filter(body => body instanceof KinematicBody && !body.isPushable());
@@ -73,52 +76,33 @@ export class PhysicsEngine {
       let temporaryPosition: Vector2 = colliderA.getPosition();
       let temporaryVelocity: Vector2 = colliderA.getVelocity();
 
-      let collision: CollisionData | null = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, collidedBodies, dt);
+      let collision: CollisionData | null = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, bodyResolutions, dt);
 
       if (collision === null) {
         log("Null Collision");
         log("DeltaTime: ", dt);
         log("Velocity: ", colliderA.getVelocity());
         log("StartPosition: ", colliderA.getGlobalPos());
-        log("StartLength: ", frameCollisions.length);
-        frameCollisions.push(new CollisionResolutionData(
+        if (!bodyResolutions.has(colliderA)) bodyResolutions.set(colliderA, []);
+        bodyResolutions.get(colliderA)?.push(new CollisionResolutionData(
+          null,
           colliderA,
           colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)),
           colliderA.getVelocity())
         );
-        log("endLength: ", frameCollisions.length);
       }
 
       log("StartPosition: ", startPosition, " startVelocity: ", startVelocity);
       for (let slidesLeft = 4; slidesLeft > 0; slidesLeft--) {
         log("");
         log("SlidesLeft: ", slidesLeft);
-        if (collision == null) {
+        if (collision == null || collision.colliderB === undefined) {
           log("Null collision");
           break;
         }
 
-
-        log("collidedBodies: ");
-        collidedBodies.forEach((value, key) => {
-          log("Value: ", value.length, " Key: ", key.getName());
-        });
-        if (!collidedBodies.has(collision.collider)) {
-          collidedBodies.set(colliderA, []);
-        }
-        collidedBodies.get(colliderA)?.push(collision.collider);
-
-        colliderA.onCollision(collision);
-        colliderA.logCollision(collision);
-
-        const otherCollision = PhysicsEngine.minkowskiSweptAABB(collision.collider, colliderA, dt);
-
-        if (otherCollision !== null) {
-          collision.collider.onCollision(otherCollision);
-          collision.collider.logCollision(otherCollision);
-        }
-
-        if (colliderA instanceof KinematicBody && ((collision.collider instanceof KinematicBody && collision.collider.isPushable()) || collision.collider instanceof StaticBody)) {
+        
+        if (colliderA instanceof KinematicBody && ((collision.colliderB instanceof KinematicBody && collision.colliderB.isPushable()) || collision.colliderB instanceof StaticBody)) {
           const currentUnpushableState = specialUnpushables.get(colliderA);
           if (currentUnpushableState === undefined) {
             specialUnpushables.set(colliderA, collision.normal);
@@ -126,22 +110,41 @@ export class PhysicsEngine {
             specialUnpushables.set(colliderA, currentUnpushableState.add(collision.normal));
           }
         }
-
+        
         log("IsUnpushable on ", specialUnpushables.get(colliderA));
-
+        
         log("Collision ocurred");
-        log("CollisionTime: ", collision.time, " position: ", collision.position, " normal: ", collision.normal, " collider: ", collision.collider.getName());
+        log("CollisionTime: ", collision.time, " position: ", collision.position, " normal: ", collision.normal, " collider: ", collision.colliderB.getName());
         const colliderAUnpushable = !colliderA.isPushable() ? Vector2.one() : specialUnpushables.get(colliderA);
-        const colliderBUnpushable = collision.collider instanceof KinematicBody && collision.collider.isPushable() ? specialUnpushables.get(collision.collider) : Vector2.one();
+        const colliderBUnpushable = collision.colliderB instanceof KinematicBody && collision.colliderB.isPushable() ? specialUnpushables.get(collision.colliderB) : Vector2.one();
         
         const finalResolutionData = this.resolveCollision(colliderA, colliderAUnpushable, collision, colliderBUnpushable, dt);
         log("Final ResolutionData Collider: ", colliderA.getName(), " position: ", finalResolutionData.colliderAFinalPosition, " Velocity: ", finalResolutionData.colliderAFinalVelocity);
-        frameCollisions.push(finalResolutionData);
 
+        log("collidedBodies: ");
+        bodyResolutions.forEach((value, key) => {
+          log("Value: ", value.length, " Key: ", key.getName());
+        });
+        if (!bodyResolutions.has(colliderA)) {
+          bodyResolutions.set(colliderA, []);
+        }
+        bodyResolutions.get(colliderA)?.push(finalResolutionData);
+
+        if (!bodyResolutions.has(collision.colliderB)) {
+          bodyResolutions.set(collision.colliderB, []);
+        }
+        bodyResolutions.get(collision.colliderB)?.push(finalResolutionData);
+
+        colliderA.onCollision(collision);
+        colliderA.logCollision(collision);
+
+        collision.colliderB.onCollision(collision);
+        collision.colliderB.logCollision(collision);
+        
         colliderA.setGlobalPos(finalResolutionData.colliderAFinalPosition);
         colliderA.setVelocity(finalResolutionData.colliderAFinalVelocity);
 
-        collision = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, collidedBodies, dt);
+        collision = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, bodyResolutions, dt);
       }
 
       log("StartPosition: ", startPosition, " startVelocity: ", startVelocity);
@@ -150,18 +153,47 @@ export class PhysicsEngine {
     }
 
     log("");
-    log("collisions: ");
-    frameCollisions.forEach(collision => log(collision.colliderA.getName()));
-    for (const collision of frameCollisions) {
-      log("Applying collision");
-      log("colliderA: ", collision.colliderA.getName(), " position: ", collision.colliderAFinalPosition, " velocity: ", collision.colliderAFinalVelocity);
-      collision.colliderA.setGlobalPos(collision.colliderAFinalPosition);
-      collision.colliderA.setVelocity(collision.colliderAFinalVelocity);
-    
-      if (collision.colliderB === undefined || collision.colliderB instanceof StaticBody || collision.colliderBFinalPosition === undefined || collision.colliderBFinalVelocity === undefined) continue;
-      log("colliderB: ", collision.colliderB.getName(), " position: ", collision.colliderBFinalPosition, " velocity: ", collision.colliderBFinalVelocity);
-      collision.colliderB.setGlobalPos(collision.colliderBFinalPosition);
-      collision.colliderB.setVelocity(collision.colliderBFinalVelocity);
+    console.log("Collisions: ", bodyResolutions);
+    log("collisions:");
+    for (const body of bodyResolutions.keys()) {
+      if (!bodyResolutions.has(body)) continue;
+      const resolutions = bodyResolutions.get(body);
+      if (resolutions === undefined) continue;
+      log(body.getName());
+      let collidedAxes = Vector2.one();
+
+      for (const resolution of resolutions) {
+        if (!(body instanceof KinematicBody)) continue;
+        // Fetch final position and velocity
+        const isColliderA = resolution.colliderA === body;
+        let finalPosition = isColliderA ? resolution.colliderAFinalPosition : resolution.colliderBFinalPosition;
+        let finalVelocity = isColliderA ? resolution.colliderAFinalVelocity : resolution.colliderBFinalVelocity;
+
+        // Data Validation
+        if (finalPosition === undefined) throw new Error("Undefined Final Position for collider " + body.getName());
+        if (finalVelocity === undefined) throw new Error("Undefined Final Velocity for collider " + body.getName());
+        
+        // Ignore already collided axes
+        const resolutionMask = collidedAxes.abs();
+        const existingMask = resolutionMask.subtract(Vector2.one()).abs();
+        finalPosition = finalPosition.multiply(resolutionMask).add(body.getGlobalPos().multiply(existingMask));
+        finalVelocity = finalVelocity.multiply(resolutionMask).add(body.getVelocity().multiply(existingMask));
+
+        log("Collision Normal: ", resolution.collision?.normal);
+        log("ResolutionMask: ", resolutionMask, " existingMask: ", existingMask);
+        log("ColliderA: ", body.getName(), " finalPosition: ", finalPosition, " finalVelocity: ", finalVelocity, " collidedAxes: ", collidedAxes);
+        // Apply finals
+        body.setGlobalPos(finalPosition);
+        body.setVelocity(finalVelocity);
+
+        // Update collided axes if there was a collision
+        if (resolution.collision !== null) {
+          collidedAxes.x = Math.max(collidedAxes.x - Math.abs(resolution.collision.normal.x), 0);
+          collidedAxes.y = Math.max(collidedAxes.y - Math.abs(resolution.collision.normal.y), 0);
+        }
+
+        if (collidedAxes.equals(Vector2.zero())) break;
+      }
     }
 
     this.interactRegions();
@@ -197,7 +229,7 @@ export class PhysicsEngine {
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal));
     const colliderBFinalVelocity = colliderA.getVelocity().clone();
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolvePushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -206,7 +238,7 @@ export class PhysicsEngine {
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderB, colliderA, collision.normal));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
   }
 
   private resolvePushableVsUnpushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -218,7 +250,7 @@ export class PhysicsEngine {
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt));
     const colliderBFinalVelocity = colliderB.getVelocity();
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolveUnpushableVsPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -231,7 +263,7 @@ export class PhysicsEngine {
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal.multiply(-1)));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);    
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolveUnpushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -240,7 +272,7 @@ export class PhysicsEngine {
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderB, colliderA, collision.normal));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
   }
 
   private resolveUnpushableVsUnpushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -252,7 +284,7 @@ export class PhysicsEngine {
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);
 
-    return new CollisionResolutionData(colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
+    return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private getCollisionResolution(currentAxis: number, colliderA: KinematicBody, colliderAUnpushableAxes: Vector2 | undefined, colliderB: KinematicBody | StaticBody, colliderBUnpushableAxes: Vector2 | undefined, collision: CollisionData, dt: number): CollisionResolutionData {
@@ -295,10 +327,10 @@ export class PhysicsEngine {
 
   private resolveCollision(colliderA: KinematicBody, colliderAUnpushableAxes: Vector2 | undefined, collision: CollisionData | null, colliderBUnpushableAxes: Vector2 | undefined, dt: number): CollisionResolutionData {
     if (collision === null) {
-      return new CollisionResolutionData(colliderA, colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)), colliderA.getVelocity());
+      return new CollisionResolutionData(collision, colliderA, colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)), colliderA.getVelocity());
     }
     
-    const colliderB = collision.collider;
+    const colliderB = collision.colliderB;
     if (!(colliderB instanceof StaticBody || colliderB instanceof KinematicBody)) {
       throw new Error("Unsupported rigidbody type.");
     }
@@ -334,6 +366,7 @@ export class PhysicsEngine {
     }
 
     const finalResolutionData = new CollisionResolutionData(
+      collision,
       colliderA,
       colliderAFinalPosition,
       colliderAFinalVelocity,
@@ -395,7 +428,7 @@ export class PhysicsEngine {
    * @param {Number} dt Delta time
    * @returns The collision information
    */
-  checkCollisions(sprite: RigidBody, velocity: Vector2, spriteExcludeList: CollisionObject[], collidedBodies: Map<RigidBody, RigidBody[]>, dt: number): CollisionData | null {
+  checkCollisions(sprite: RigidBody, velocity: Vector2, spriteExcludeList: CollisionObject[], bodyResolutions: Map<RigidBody, CollisionResolutionData[]>, dt: number): CollisionData | null {
     const spriteGlobalPos = sprite.getChildrenType<AABB>(AABB)[0].getGlobalPos();
 
     let broadBox = new AABB(
@@ -424,12 +457,15 @@ export class PhysicsEngine {
     const possibleSprites = [];
     for (let i = 0; i < this.rigidBodies.length; i++) {
       const spr = this.rigidBodies[i];
-      const alreadyCollided = collidedBodies.get(spr)?.indexOf(sprite);
+      const previousCollision = bodyResolutions.get(sprite);
+      const alreadyCollided = previousCollision?.find((value: CollisionResolutionData) => {
+        return value.colliderA === spr || value.colliderB === spr;
+      });
 
       if (
         spr != sprite &&
         spriteExcludeList.indexOf(spr) == -1 &&
-        (alreadyCollided === undefined || alreadyCollided == -1) &&
+        (previousCollision === undefined || alreadyCollided === undefined) &&
         PhysicsEngine.staticAABB(broadBox, spr.getChildrenType<AABB>(AABB)[0])
       ) {
         possibleSprites.push(spr);
@@ -487,7 +523,7 @@ export class PhysicsEngine {
       if (collisions.length > 0) {
         const finalCollision = collisions[collisions.length - 1];
         sprite.onCollision(finalCollision);
-        finalCollision.collider?.onCollision(finalCollision);
+        finalCollision.colliderB?.onCollision(finalCollision);
         return finalCollision;
       } else {
         return null;
@@ -555,7 +591,8 @@ export class PhysicsEngine {
         time: 0,
         normal: new Vector2(signX, 0),
         position: new Vector2(sprite0Pos.x + px * signX, sprite0Pos.y),
-        collider: sprite1,
+        colliderA: sprite0,
+        colliderB: sprite1,
       };
 
       sprite0.onCollision(collision);
@@ -566,11 +603,12 @@ export class PhysicsEngine {
       log("spriteGlobalPos: ", sprite0Pos.y);
       log("signY: ", signY, " sub: ", (py * signY));
       log("expected position: ", new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY));
-      const collision = {
+      const collision: CollisionData = {
         time: 0,
         normal: new Vector2(0, signY),
         position: new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY),
-        collider: sprite1,
+        colliderA: sprite0,
+        colliderB: sprite1,
       };
 
       sprite0.onCollision(collision);
@@ -650,7 +688,7 @@ export class PhysicsEngine {
     log("collisionTime1: ", collisionTime);
 
     return {
-      collider: collider,
+      colliderA: collider,
       time: collisionTime,
       normal: collisionNormal,
       position: new Vector2(rayStart.x + rayDelta.x * collisionTime, rayStart.y + rayDelta.y * collisionTime)
@@ -712,6 +750,9 @@ export class PhysicsEngine {
       collision.position = collision.position.subtract(b1HalfSize);
     }
 
+    collision.colliderA = b1;
+    collision.colliderB = b2;
+
     log("b1: ", b1.getName(), " b2: ", b2.getName());
     log("finalPositionInSweptAABB: ", collision.position);
     return collision;
@@ -719,6 +760,9 @@ export class PhysicsEngine {
 
   // RETURN the time and surface normal.
   // Adapted from https://www.gamedev.net/articles/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/
+  /**
+   * @depricated Use Minoskwi Swept AABB Test
+   */
   static sweptAABB(dynamicBox: RigidBody, staticBox: RigidBody, vel: Vector2, dt: number): CollisionData | null {
     const b1 = dynamicBox.getChildrenType<AABB>(AABB)[0];
     const b2 = staticBox.getChildrenType<AABB>(AABB)[0];
@@ -801,7 +845,8 @@ export class PhysicsEngine {
               b2Pos.x + b2.getSize().x,
               b1Pos.y + vel.y * finalEntryTime
             ),
-            collider: staticBox,
+            colliderA: dynamicBox,
+            colliderB: staticBox,
           };
         } else {
           return {
@@ -811,7 +856,8 @@ export class PhysicsEngine {
               b2Pos.x - b1.getSize().x,
               b1Pos.y + vel.y * finalEntryTime
             ),
-            collider: staticBox,
+            colliderA: dynamicBox,
+            colliderB: staticBox,
           };
         }
       } else {
@@ -823,7 +869,8 @@ export class PhysicsEngine {
               b1Pos.x + vel.x * finalEntryTime,
               b2Pos.y + b2.getSize().y
             ),
-            collider: staticBox,
+            colliderA: dynamicBox,
+            colliderB: staticBox,
           };
         } else {
           return {
@@ -833,7 +880,8 @@ export class PhysicsEngine {
               b1Pos.x + vel.x * finalEntryTime,
               b2Pos.y - b1.getSize().y
             ),
-            collider: staticBox,
+            colliderA: dynamicBox,
+            colliderB: staticBox,
           };
         }
       }
