@@ -76,6 +76,7 @@ export class MerlinEngine {
       requestAnimationFrame(startTime => this.frame(startTime));
     } catch (e: any) {
       alert(e.stack);
+      console.error(e);
     }
   }
 

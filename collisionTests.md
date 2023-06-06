@@ -77,7 +77,7 @@ Swap velocities
 ## Unpushable vs. Unpushable
 
  1. Collider A goes to the collision position along the normal, and moves under its own velocity on the other
- 2. Collider B goes to the side of Collider A that corresponds to the normal and moves under its own velocity on the other
+ 2. Collider B goes to the side of Collider A that corresponds to the inverse normal and moves under its own velocity on the other
  2. Along the normal, the velocities of both colliders are set to 0
 
 ## Static vs. Static

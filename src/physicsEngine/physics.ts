@@ -144,6 +144,7 @@ export class PhysicsEngine {
         colliderA.setGlobalPos(finalResolutionData.colliderAFinalPosition);
         colliderA.setVelocity(finalResolutionData.colliderAFinalVelocity);
 
+        log("---===Checking for new Collision===---");
         collision = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, bodyResolutions, dt);
       }
 
@@ -179,6 +180,7 @@ export class PhysicsEngine {
         finalPosition = finalPosition.multiply(resolutionMask).add(body.getGlobalPos().multiply(existingMask));
         finalVelocity = finalVelocity.multiply(resolutionMask).add(body.getVelocity().multiply(existingMask));
 
+        log("Collision colliderA: ", resolution.colliderA.getName(), " colliderB: ", resolution.colliderB?.getName());
         log("Collision Normal: ", resolution.collision?.normal);
         log("ResolutionMask: ", resolutionMask, " existingMask: ", existingMask);
         log("ColliderA: ", body.getName(), " finalPosition: ", finalPosition, " finalVelocity: ", finalVelocity, " collidedAxes: ", collidedAxes);
@@ -188,8 +190,9 @@ export class PhysicsEngine {
 
         // Update collided axes if there was a collision
         if (resolution.collision !== null) {
-          collidedAxes.x = Math.max(collidedAxes.x - Math.abs(resolution.collision.normal.x), 0);
-          collidedAxes.y = Math.max(collidedAxes.y - Math.abs(resolution.collision.normal.y), 0);
+          const isColliderA = resolution.colliderA === body ? 1 : -1;
+          collidedAxes.x = Math.max(collidedAxes.x - Math.abs(resolution.collision.normal.x * isColliderA), 0);
+          collidedAxes.y = Math.max(collidedAxes.y - Math.abs(resolution.collision.normal.y * isColliderA), 0);
         }
 
         if (collidedAxes.equals(Vector2.zero())) break;
@@ -211,6 +214,7 @@ export class PhysicsEngine {
 
     log("Get edge position.");
     log("ColliderA: ", colliderA.getName(), " ColliderB: ", colliderB.getName());
+    log("Normal: ", normal);
     log("ColliderAHalfSize: ", colliderAHalfSize, " ColliderAMidPosition: ", colliderAMidPosition);
     log("ColliderBHalfSize: ", colliderBHalfSize);
 
@@ -281,7 +285,7 @@ export class PhysicsEngine {
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(collision.position.multiply(collision.normal.abs()));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal));
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal.multiply(-1)));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
@@ -301,6 +305,7 @@ export class PhysicsEngine {
 
     log("Getting collision Resolution for ", colliderA.getName(), " and ", colliderB.getName());
     log("colliderAUnpushable: ", colliderAUnpushable, " ColliderBUnpushable: ", colliderBUnpushable);
+    log("Collision Normal: ", collision.normal);
 
     if (colliderAUnpushable == 0 && colliderB instanceof StaticBody) {
       log("Resolution pushable vs static");
@@ -480,27 +485,45 @@ export class PhysicsEngine {
     }
 
     // Get closest collision
-    let closestSprites: RigidBody[] = [];
-    let closestDist = Infinity;
-    for (let i = 0; i < possibleSprites.length; i++) {
-      const dist = PhysicsEngine.getDist(sprite, possibleSprites[i], velocity);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestSprites = [possibleSprites[i]];
-      } else if (dist == closestDist) {
-        closestSprites.push(possibleSprites[i]);
+    let spriteDistances: Map<RigidBody, number> = new Map();
+    let closestSprites: RigidBody[] = [...possibleSprites];
+    possibleSprites.forEach((colliderB: RigidBody) => spriteDistances.set(colliderB, PhysicsEngine.getDist(sprite, colliderB, velocity)));
+
+    closestSprites.sort((colliderA: RigidBody, colliderB: RigidBody) => {
+      const getColliderType = (collider: RigidBody) => {
+        if (collider instanceof StaticBody) return 0;
+        if (collider instanceof KinematicBody && !collider.isPushable()) return 1;
+        if (collider instanceof KinematicBody && collider.isPushable()) return 2;
+        return 3;
       }
-    }
+ 
+      const colliderAType = getColliderType(colliderA);
+      const colliderBType = getColliderType(colliderB);
+      log("colliderAType: ", colliderAType);
+      log("colliderBType: ", colliderBType);
+      if (colliderAType != colliderBType) {
+        return colliderAType < colliderBType ? -1 : 1;
+      }
+
+      const colliderADistance = PhysicsEngine.getDist(sprite, colliderA, velocity);
+      const colliderBDistance = PhysicsEngine.getDist(sprite, colliderB, velocity);
+      if (colliderADistance == colliderBDistance) return 0;
+      return colliderADistance < colliderBDistance ? -1 : 1;
+    });
+
+    log("closestSprites: ");
+    closestSprites.forEach((body: RigidBody) => log(body.getName()));
 
     // Calculate Collision if Found
     if (closestSprites.length > 0) {
       let suggestedVelocity = velocity.clone();
       let collisions = [];
       
-      for (let i = 0; i < closestSprites.length; i++) {
+      // for (let i = 0; i < closestSprites.length; i++) {
+        log("currentSprite: ", closestSprites[0].getName());
         const collision = PhysicsEngine.minkowskiSweptAABB(
           sprite,
-          closestSprites[i],
+          closestSprites[0],
           dt
         );
 
@@ -511,23 +534,20 @@ export class PhysicsEngine {
         if (collision === null) return null;
 
         if (!collision.normal.equals(Vector2.zero())) {
-          collisions.push(collision);
-
-          suggestedVelocity.x = suggestedVelocity.x * dt;
-          suggestedVelocity.y = suggestedVelocity.y * dt;
+          return collision;
         } else {
-          break;
+          return null;
         }
-      }
+      // }
 
-      if (collisions.length > 0) {
-        const finalCollision = collisions[collisions.length - 1];
-        sprite.onCollision(finalCollision);
-        finalCollision.colliderB?.onCollision(finalCollision);
-        return finalCollision;
-      } else {
-        return null;
-      }
+      // if (collisions.length > 0) {
+      //   const finalCollision = collisions[collisions.length - 1];
+      //   sprite.onCollision(finalCollision);
+      //   finalCollision.colliderB?.onCollision(finalCollision);
+      //   return finalCollision;
+      // } else {
+      //   return null;
+      // }
     }
 
     return null;
@@ -725,6 +745,7 @@ export class PhysicsEngine {
 
     log("b1MidPosition: ", b1MidPosition, " b1HalfSize: ", b1HalfSize, " relativeVelocity: ", relativeVelocity);
 
+    log("b1: ", b1.getName(), " b2: ", b2.getName());
     const collision = PhysicsEngine.rayAABB(b1MidPosition, relativeVelocity, b2, b1HalfSize, dt);
     
     if (collision === null) return collision;
