@@ -1,5 +1,5 @@
 import { Utils } from "../utils";
-import { log } from "../index";
+import { internalLog, log } from "../index";
 import { Vector2 } from "../math/vector2";
 import { Transform } from "../math/transform";
 
@@ -56,7 +56,7 @@ export class Renderer {
   }
 
   fillRect(position: Vector2, size: Vector2, color: string): void {
-    log("fillRect: " + JSON.stringify(position) + " " + this.scaleFactor, " size: ", size);
+    internalLog("fillRect: " + JSON.stringify(position) + " " + this.scaleFactor, " size: ", size);
     this.viewport.fillStyle = color;
     this.viewport.fillRect(Math.floor(position.x * this.scaleFactor), Math.floor(position.y * this.scaleFactor), Math.ceil(size.x * this.scaleFactor), Math.ceil(size.y * this.scaleFactor));
   }

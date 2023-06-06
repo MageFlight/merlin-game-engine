@@ -1,5 +1,5 @@
 import { Vector2 } from "../math/vector2";
-import { log } from "../index";
+import { internalLog } from "../index";
 import { PhysicsEngine } from "../physicsEngine/physics";
 import { Renderer } from "../io/renderer";
 import { GameObjectTree } from "./gameObjectTree";
@@ -35,7 +35,7 @@ export class GameObject {
   }
 
   addChild(child: GameObject): GameObject {
-    log("parent init: " + this.parent);
+    internalLog("parent init: " + this.parent);
     child.parent = this;
     child.gameObjectTree = this.gameObjectTree;
     this.children.push(child);

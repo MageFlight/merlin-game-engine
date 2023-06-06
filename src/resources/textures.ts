@@ -93,7 +93,6 @@ export class TiledTexture extends Texture {
         // }
 
         const img = images[Math.floor(TiledTexture.rng.next().value * images.length)];
-        console.log(img);
         TiledTexture.drawTile(img, column, row, size, tileSize, tileRotation, tileHorizontal, tileVertical, tileRender);
       }
     }

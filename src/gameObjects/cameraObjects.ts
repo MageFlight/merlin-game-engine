@@ -1,6 +1,6 @@
 import { GameObject, Sprite } from "./gameObject";
 import { Vector2 } from "../math/vector2";
-import { log, renderer } from "../index";
+import { internalLog, renderer } from "../index";
 import { Transform } from "../math/transform";
 import { Utils } from "../utils";
 import { Texture } from "../resources/textures";
@@ -108,10 +108,10 @@ export class Camera extends GameObject {
     } else {
       parentScreenPosition = Vector2.zero();
     }
-    log("parentSreenPos: ", JSON.stringify(parentScreenPosition));
-    log("scrollPos: " + JSON.stringify(this.scrollPos));
-    log("scrollMax: " + JSON.stringify(this.scrollMax));
-    log("scrollMin: " + JSON.stringify(this.scrollMin));
+    internalLog("parentSreenPos: ", JSON.stringify(parentScreenPosition));
+    internalLog("scrollPos: " + JSON.stringify(this.scrollPos));
+    internalLog("scrollMax: " + JSON.stringify(this.scrollMax));
+    internalLog("scrollMin: " + JSON.stringify(this.scrollMin));
 
     // x-axis
     if (!this.horizontalLock) {
@@ -126,19 +126,19 @@ export class Camera extends GameObject {
     }
     // y-axis
     if (!this.verticalLock) {
-      log("screenPos: " + parentScreenPosition.y);
-      log("upOffset: " + (parentScreenPosition.y - this.upBound));
-      log("downOffset: " + (parentScreenPosition.y - this.downBound));
+      internalLog("screenPos: " + parentScreenPosition.y);
+      internalLog("upOffset: " + (parentScreenPosition.y - this.upBound));
+      internalLog("downOffset: " + (parentScreenPosition.y - this.downBound));
       if (parentScreenPosition.y < this.upBound)
         this.scrollPos.y += parentScreenPosition.y - this.upBound;
       if (parentScreenPosition.y > this.downBound)
         this.scrollPos.y += parentScreenPosition.y - this.downBound;
-      log("beforeClamp: " + this.scrollPos.y);
+      internalLog("beforeClamp: " + this.scrollPos.y);
       this.scrollPos.y = Math.min(
         Math.max(this.scrollPos.y, this.scrollMin.y),
         this.scrollMax.y
       );
-      log("afterClamp: " + this.scrollPos.y);
+      internalLog("afterClamp: " + this.scrollPos.y);
     }
 
     return this.scrollPos;
@@ -155,7 +155,7 @@ export class TextureRect extends Sprite {
     name: string
   ) {
     super(position, size, name);
-    log("tex: " + JSON.stringify(texture));
+    internalLog("tex: " + JSON.stringify(texture));
     this.texture = texture;
   }
 
@@ -168,7 +168,7 @@ export class TextureRect extends Sprite {
   }
 
   override draw(): void {
-    console.log("draw: ", renderer, " pos: ", this.getGlobalPos());
+    internalLog("draw: ", renderer, " pos: ", this.getGlobalPos());
     this.texture.draw(this.getGlobalPos());
   }
 }

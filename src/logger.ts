@@ -2,9 +2,16 @@ export class Logger {
   private debugWindow: Window | null = null;
   private logBuffer: string[] = [];
   private logScroll: number = 1;
+  private allowInternalLog: boolean = false;
 
   constructor() {
     addEventListener("unload", () => this.debugWindow?.close());
+  }
+
+  internalLog(...messages: any[]): void {
+    if (!this.allowInternalLog) return;
+    
+    this.log(...messages);
   }
 
   log(...messages: any[]) {
@@ -20,6 +27,14 @@ export class Logger {
 
     // formattedMessages.unshift(`[${(new Error().stack.toString().split(/\r\n|\n/))[2].replace(/([\S\s]*\/Voidformer\/)|(\)$)/g, '')}] `);
     this.logBuffer.push(formattedMessages.join(""));
+  }
+
+  setAllowInternalLog(newValue: boolean) {
+    this.allowInternalLog = newValue;
+  }
+
+  allowsInternalLog(): boolean {
+    return this.allowInternalLog;
   }
 
   update() {

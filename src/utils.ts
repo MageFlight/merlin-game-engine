@@ -1,5 +1,5 @@
 import { Vector2 } from "./math/vector2";
-import { log } from "./index";
+import { internalLog, log } from "./index";
 
 export type Constructor<T> = new (...args: any[]) => T;
 
@@ -51,8 +51,6 @@ export class Utils {
   }
 
   static listen(signal: string, action: Function) {
-    console.log("Add action", action);
-
     if (!Utils.signals.has(signal)) {
       Utils.signals.set(signal, []);
     }
@@ -72,19 +70,19 @@ export class Utils {
     for (let i = 0; i < Utils.timers.length; i++) {
       const timer = Utils.timers[i];
       timer.timeUsed += dt;
-      log("dt: " + dt);
-      log("timeRemaining: " + timer.timeUsed);
-      log("Length: " + timer.length); 
+      internalLog("dt: " + dt);
+      internalLog("timeRemaining: " + timer.timeUsed);
+      internalLog("Length: " + timer.length); 
 
       if (timer.timeUsed >= timer.length) {
         timer.action.call(timer.action);
 
         if (timer.recurring) {
-          log("rercurring.");
+          internalLog("rercurring.");
           timer.timeUsed = 0;
-          log("final time left: " + timer.timeUsed);
+          internalLog("final time left: " + timer.timeUsed);
         } else {
-          log("removing")
+          internalLog("removing")
           Utils.timers.splice(i, 1);
         }
       }
