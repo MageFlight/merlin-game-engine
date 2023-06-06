@@ -28,16 +28,20 @@ export class TestGame extends GameState {
       new Player()
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "playerCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(128, 128), tex, "playerTexture")),
+      
+      new TogglePlatform(new Vector2(0, Utils.GAME_HEIGHT - 512), new Vector2(64, 384), 0b1, 0b1, 0.8, "toggle1")
+        .addChild(new AABB(Vector2.zero(), new Vector2(64, 384), true, "toggle1Collider"))
+        .addChild(new ColorRect(Vector2.zero(), new Vector2(64, 384), "#f5a442", "toggle1Texture")),
 
       new SquarePlayer(new Vector2(128, 128), "squarePlayer")
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "squareCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "#00ffff", "squareTexture")),
 
-      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0.8, "wall")
+      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0b10, 0b1, 0.8, "wall")
         .addChild(new AABB(Vector2.zero(), new Vector2(192, 320), true, "wallCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(192, 320), "#ff0000", "wallTex")),
 
-      new StaticBody(new Vector2(0, Utils.GAME_HEIGHT - 128), new Vector2(1280, 128), 0.8, "ground")
+      new StaticBody(new Vector2(0, Utils.GAME_HEIGHT - 128), new Vector2(1280, 128), 0b1, 0b1, 0.8, "ground")
         .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "groundCollider"))
         .addChild(new TextureRect(Vector2.zero(), new Vector2(1280, 128), ground, "groundTexture"))
     ]);
@@ -52,12 +56,31 @@ export class TestGame extends GameState {
   }
 }
 
+class TogglePlatform extends StaticBody {
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, friction: number, name: string) {
+    super(position, size, collisionLayer, collisionMask, friction, name);
+
+    Utils.listen("togglePlatform", (data: {name: string, enabled: -1 | 0 | 1}) => {
+      if (data.name == this.name) {
+        const collider = this.getChildrenType<AABB>(AABB)[0];
+        if (data.enabled == 0) {
+          collider.setVisible(!collider.isVisible());
+        } else if (data.enabled == -1) {
+          collider.setVisible(false);
+        } else if (data.enabled == 1) {
+          collider.setVisible(true);
+        }
+      }
+    });
+  }
+}
+
 class SquarePlayer extends KinematicBody {
   private spawnpoint: Vector2;
   private speed: number = 0.5;
 
   constructor(spawnpoint: Vector2, name: string) {
-    super(spawnpoint, new Vector2(128, 128), Vector2.zero(), false, 0.8, name);
+    super(spawnpoint, new Vector2(128, 128), 0b1, 0b1, Vector2.zero(), false, 0.8, name);
     this.spawnpoint = spawnpoint.clone();
   }
 
@@ -334,7 +357,7 @@ class Player extends KinematicBody {
   private horizontalDirection: number = 0;
 
   constructor() {
-    super(new Vector2(128, 128), new Vector2(128, 128), Vector2.zero(), true, 0.8, "player");
+    super(new Vector2(128, 128), new Vector2(128, 128), 0b1, 0b1, Vector2.zero(), true, 0.8, "player");
   }
 
   override update(dt: number) {
@@ -348,7 +371,10 @@ class Player extends KinematicBody {
       this.horizontalDirection = 1;
     }
 
+    if (keyboardHandler.keyJustPressed("KeyE")) Utils.broadcast("togglePlatform", {name: "toggle1", enabled: 0});
+
     if (this.position.y > 1088) {
+      this.velocity = Vector2.zero();
       this.position = this.spawn.clone();
       this.movementController.reset();
     }

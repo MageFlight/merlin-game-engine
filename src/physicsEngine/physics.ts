@@ -467,11 +467,22 @@ export class PhysicsEngine {
         return value.colliderA === spr || value.colliderB === spr;
       });
 
+      const sprCollider = spr.getChildrenType<AABB>(AABB)[0];
+      const spriteCollider = sprite.getChildrenType<AABB>(AABB)[0];
+
+      log("spr: ", spr.getName(), " sprite: ", sprite.getName());
+      log("spriteColliderName: ", spriteCollider.getName());
+      log("sprColliderVisible: ", sprCollider.isVisible(), " SpriteColliderVisible: ", spriteCollider.isVisible());
+      log("sprCollisionLayer: ", spr.getCollisionLayer(), " sprCollisionMask: ", spr.getCollisionMask());
+      log("spriteCollisionLayer: ", sprite.getCollisionLayer(), " spriteCollisionMask: ", sprite.getCollisionMask());
+      log("Spr & Sprite: ", spr.getCollisionLayer() & sprite.getCollisionMask(), " Sprite & spr: ", sprite.getCollisionLayer() & spr.getCollisionMask());
       if (
         spr != sprite &&
         spriteExcludeList.indexOf(spr) == -1 &&
         (previousCollision === undefined || alreadyCollided === undefined) &&
-        PhysicsEngine.staticAABB(broadBox, spr.getChildrenType<AABB>(AABB)[0])
+        (sprCollider.isVisible() && spriteCollider.isVisible()) &&
+        (spr.getCollisionLayer() & sprite.getCollisionMask() || sprite.getCollisionLayer() & spr.getCollisionMask()) &&
+        PhysicsEngine.staticAABB(broadBox, sprCollider)
       ) {
         possibleSprites.push(spr);
       }
