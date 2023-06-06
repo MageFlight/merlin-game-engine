@@ -24,7 +24,7 @@ export class Button extends GUISprite {
   }
 
   // override imgui(gui) {
-  //   log("Buttoning")
+  //   internalLog("Buttoning")
   //   if (gui.button(gui.getID(), this._position, this._size, this._texture)) {
   //     this.onPress();
   //   }

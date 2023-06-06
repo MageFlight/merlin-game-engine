@@ -20,7 +20,7 @@ export class Vector2 {
   //  * @returns A new Vector2, appropriately scaled
   //  */
   // static levelPositionVector2(x, y, readonly = false) {
-  //   log("LevelVec x: " + (x * Utils.getLevelScale()) + " y: " + (Utils.getGameSize().y - (y * Utils.getLevelScale())));
+  //   internalLog("LevelVec x: " + (x * Utils.getLevelScale()) + " y: " + (Utils.getGameSize().y - (y * Utils.getLevelScale())));
   //   return new Vector2(x * Utils.getLevelScale(), Utils.getGameSize().y - (y * Utils.getLevelScale()), readonly);
   // }
 
@@ -99,7 +99,7 @@ export class Vector2 {
   //  * @returns The resulting vector.
   //  */
   // add(x, y) {
-  //   log("addNum")
+  //   internalLog("addNum")
   //   return new Vector2(this.x + x, this.y + y, this.#readonly);
   // }
 

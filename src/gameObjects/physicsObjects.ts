@@ -1,6 +1,6 @@
 import { Vector2 } from "../math/vector2";
 import { Sprite } from "./gameObject";
-import { log } from "../index";
+import { internalLog, log } from "../index";
 import { CollisionData, PhysicsEngine } from "../physicsEngine/physics";
 
 export class AABB extends Sprite {
@@ -160,7 +160,7 @@ export class KinematicBody extends RigidBody {
   }
 
   isOnGround(upDirection: Vector2): boolean {
-    log("Looking in last slides: " + this.lastFrameCollisions.length);
+    internalLog("Looking in last slides: " + this.lastFrameCollisions.length);
     return this.lastFrameCollisions.some((collision: CollisionData) => {
       const isColliderA = collision.colliderA === this;
       const collisionNormal = isColliderA ? collision.normal : collision.normal.multiply(-1);
@@ -169,7 +169,7 @@ export class KinematicBody extends RigidBody {
   }
 
   getGroundPlatform(upDirection: Vector2): RigidBody | null {
-    log("getting ground platform in length ", this.lastFrameCollisions.length);
+    internalLog("getting ground platform in length ", this.lastFrameCollisions.length);
 
     for (let i = 0; i < this.lastFrameCollisions.length; i++) {
       const collision = this.lastFrameCollisions[i];

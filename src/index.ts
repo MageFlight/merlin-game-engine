@@ -9,6 +9,7 @@ export const mouseHandeler: MouseHandeler = new MouseHandeler();
 export const keyboardHandler: KeyboardHandler = new KeyboardHandler(false);
 export const logger: Logger = new Logger();
 export const log: Function = logger.log.bind(logger);
+export const internalLog: Function = logger.internalLog.bind(logger);
 
 export class MerlinEngine {
   private gameStateStack: GameState[] = [];
@@ -24,8 +25,10 @@ export class MerlinEngine {
    * The constructor for MerlinEngine
    * @param paused Whether or not the game engine will initially be paused.
    */
-  constructor(paused: boolean = false) {
+  constructor(paused: boolean = false, showLog: boolean = false, allowInternalLog: boolean = false) {
     this.paused = paused;
+    logger.setAllowInternalLog(allowInternalLog);
+    this.logActive = showLog;
   }
 
   /**
@@ -38,46 +41,41 @@ export class MerlinEngine {
   }
 
   private async frame(startTime: number) {
-    try {
-      this.dt = startTime - this.prevStartTime;
-      this.prevStartTime = startTime;
+    this.dt = startTime - this.prevStartTime;
+    this.prevStartTime = startTime;
 
-      mouseHandeler.update();
-      keyboardHandler.update();
+    mouseHandeler.update();
+    keyboardHandler.update();
 
-      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = false;
-      if (keyboardHandler.keyJustReleased("KeyP")) this.paused = !this.paused;
+    if (keyboardHandler.keyJustReleased("KeyO")) this.paused = false;
+    if (keyboardHandler.keyJustReleased("KeyP")) this.paused = !this.paused;
 
-      if (this.dt >= 0 && !this.paused) {
-        Utils.timerUpdate(this.dt);
+    if (this.dt >= 0 && !this.paused) {
+      Utils.timerUpdate(this.dt);
 
-        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-          const state: GameState = this.gameStateStack[i];
-          if (state && !state.isPaused()) {
-            state.update(this.dt);
-          }
-        }
-
-        renderer.clear('#0000ff');
-        for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
-          const state: GameState = this.gameStateStack[i];
-          if (state && !state.isPaused()) {
-            state.draw();
-          }
+      for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+        const state: GameState = this.gameStateStack[i];
+        if (state && !state.isPaused()) {
+          state.update(this.dt);
         }
       }
 
-      if (this.logActive && !this.paused) logger.update();
-      
-      if (keyboardHandler.keyJustReleased("KeyO")) this.paused = true;
-      if (keyboardHandler.keyJustReleased("KeyI")) this.logActive = !this.logActive;
-
-      this.gameStateStack = [...this.gameStateStackBuffer];
-      requestAnimationFrame(startTime => this.frame(startTime));
-    } catch (e: any) {
-      alert(e.stack);
-      console.error(e);
+      renderer.clear('#0000ff');
+      for (let i = this.gameStateStack.length - 1; i >= 0; i--) {
+        const state: GameState = this.gameStateStack[i];
+        if (state && !state.isPaused()) {
+          state.draw();
+        }
+      }
     }
+
+    if (this.logActive && !this.paused) logger.update();
+    
+    if (keyboardHandler.keyJustReleased("KeyO")) this.paused = true;
+    if (keyboardHandler.keyJustReleased("KeyI")) this.logActive = !this.logActive;
+
+    this.gameStateStack = [...this.gameStateStackBuffer];
+    requestAnimationFrame(startTime => this.frame(startTime));
   }
 
   /**

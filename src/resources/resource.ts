@@ -13,7 +13,7 @@ export class ResourceLoader {
 
   static async getImage(src: string): Promise<ImageBitmap> {
     if (!ResourceLoader.loadedImages.has(src)) { // Check if the image is already loaded
-      // log("loading img " + src)
+      //internalLog("loading img " + src)
       ResourceLoader.loadedImages.set(src, await ResourceLoader.loadImage(src));
     }
   
@@ -26,7 +26,7 @@ export class ResourceLoader {
       img.src = src;
       img.onload = () => {
         console.log("loaded image " + src);
-        // log(`Image ${src} width is ${img.width}`);
+        //internalLog(`Image ${src} width is ${img.width}`);
         createImageBitmap(img, 0, 0, img.width, img.height)
           .then(imgBitmap => resolve(imgBitmap))
           .catch(error => reject(error));
