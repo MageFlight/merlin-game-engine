@@ -4,8 +4,6 @@ import { log } from "../index";
 import { CollisionData, PhysicsEngine } from "../physicsEngine/physics";
 
 export class AABB extends Sprite {
-  protected enabled;
-
   /**
    * Creates an Axis-Aligned Bounding Box.
    * @param {Vector2} position The initial position of the collider
@@ -15,11 +13,7 @@ export class AABB extends Sprite {
    */
   constructor(position: Vector2, size: Vector2, enabled: boolean, name: string) {
     super(position, size, name);
-    this.enabled = enabled;
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
+    this.visible = enabled;
   }
 }
 
@@ -27,7 +21,7 @@ export class CollisionObject extends Sprite {
   protected collisionMask: number = 0b1; // Same as 0b0000000001
   protected collisionLayer: number = 0b1;
 
-  constructor(position: Vector2, size: Vector2, collisionMask: number, collisionLayer: number, name: string) {
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, name: string) {
     super(position, size, name);
     this.collisionMask = collisionMask;
     this.collisionLayer = collisionLayer;
@@ -74,8 +68,8 @@ export class CollisionObject extends Sprite {
 export class Region extends CollisionObject {
   protected regionsInside: Region[] = [];
 
-  constructor(position: Vector2, size: Vector2, name: string) {
-    super(position, size, 0b1, 0b1, name);
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, name: string) {
+    super(position, size, collisionLayer, collisionLayer, name);
   }
 
   interactWithRegion(region: Region): void {
@@ -107,8 +101,9 @@ export class RigidBody extends Region {
   protected friction: number = 0.8;
   protected lastFrameCollisions: CollisionData[] = [];
 
-  constructor(position: Vector2, size: Vector2, friction: number, name: string) {
-    super(position, size, name);
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, friction: number, name: string) {
+    super(position, size, collisionLayer, collisionMask, name);
+    this.friction = friction;
   }
 
   public resetFrameColisions(): void {
@@ -132,8 +127,8 @@ export class RigidBody extends Region {
 }
 
 export class StaticBody extends RigidBody {
-  constructor(position: Vector2, size: Vector2, friction: number, name: string) {
-    super(position, size, friction, name);
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, friction: number, name: string) {
+    super(position, size, collisionLayer, collisionMask, friction, name);
     this.friction = friction;
   }
 }
@@ -142,8 +137,8 @@ export class KinematicBody extends RigidBody {
   protected pushable: boolean;
   protected velocity: Vector2;
 
-  constructor(position: Vector2, size: Vector2, velocity: Vector2, pushable: boolean, friction: number, name: string) {
-    super(position, size, friction, name);
+  constructor(position: Vector2, size: Vector2, collisionLayer: number, collisionMask: number, velocity: Vector2, pushable: boolean, friction: number, name: string) {
+    super(position, size, collisionLayer, collisionMask, friction, name);
     this.velocity = velocity;
     this.pushable = pushable;
   }
