@@ -6,7 +6,7 @@ module.exports = {
   entry: {
     index: "./test/src/index.ts",
   },
-  devtool: "source-map", // Change this in production to 'source-map'
+  devtool: "inline-source-map", // Change this in production to 'source-map'
   devServer: {
     static: "./test/public",
     open: true

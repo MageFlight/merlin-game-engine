@@ -105,9 +105,18 @@ export class Region extends CollisionObject {
 
 export class RigidBody extends Region {
   protected friction: number = 0.8;
+  protected lastFrameCollisions: CollisionData[] = [];
 
   constructor(position: Vector2, size: Vector2, friction: number, name: string) {
     super(position, size, name);
+  }
+
+  public resetFrameColisions(): void {
+    this.lastFrameCollisions = [];
+  }
+
+  public logCollision(collision: CollisionData): void {
+    this.lastFrameCollisions.push(collision);
   }
 
   public getFriction(): number {
@@ -118,7 +127,8 @@ export class RigidBody extends Region {
     this.friction = newFriction;
   }
 
-  onCollision(collision: CollisionData) {}
+  public onCollision(collision: CollisionData): void {
+  }
 }
 
 export class StaticBody extends RigidBody {
@@ -129,84 +139,55 @@ export class StaticBody extends RigidBody {
 }
 
 export class KinematicBody extends RigidBody {
-  protected lastSlideCollisions: CollisionData[] = [];
+  protected pushable: boolean;
+  protected velocity: Vector2;
 
-  constructor(position: Vector2, size: Vector2, friction: number, name: string) {
+  constructor(position: Vector2, size: Vector2, velocity: Vector2, pushable: boolean, friction: number, name: string) {
     super(position, size, friction, name);
+    this.velocity = velocity;
+    this.pushable = pushable;
   }
 
-  /**
-   * Moves this sprite by the movement vector and stops if it encounters a collider.
-   * @param {Vector2} movement The vector to move by.
-   * @param {PhysicsEngine} physics
-   * @param {Number} dt Delta time
-   * @returns The information about the collision, or null if there was none.
-   */
-  moveAndCollide(movement: Vector2, physics: PhysicsEngine, dt: number): CollisionData | null {
-    return physics.checkCollisions(this, movement, [], dt);
+  public isPushable(): boolean {
+    return this.pushable;
   }
 
-  /**
-   * Moves this sprite by the movement vector and slides along the surface it encounters.
-   * @param {Vector2} movement How much to move by
-   * @param {Number} dt Delta time between frames
-   * @param {Number} slidesLeft Maximum number of collisions
-   */
-  moveAndSlide(movement: Vector2, physics: PhysicsEngine, dt: number, slidesLeft: number = 4) {
-    this.lastSlideCollisions = [];
+  public setPushable(newPushable: boolean): void {
+    this.pushable = newPushable;
+  }
 
-    let excludeList: RigidBody[] = [];
-    let collision: CollisionData | null = physics.checkCollisions(this, movement, excludeList, dt);
-    while (collision != null && !collision.normal.equals(Vector2.zero()) && slidesLeft > 0) {
-      log("collision!!!!!!!!!!!!!!");
-      log("collisionTime: " + collision.time);
-      log("Position: " + JSON.stringify(collision.position));
-      log("normal: " + JSON.stringify(collision.normal));
-      this.position = this.position.add(collision.position.subtract(this.getGlobalPos()));
+  public getVelocity(): Vector2 {
+    return this.velocity;
+  }
 
-      log("beforeCollision: " + JSON.stringify(movement));
-      const dotprod =
-        movement.x * collision.normal.y + movement.y * collision.normal.x;
-      movement.x = dotprod * collision.normal.y;
-      movement.y = dotprod * collision.normal.x;
-      log("AfterCollision: " + JSON.stringify(movement));
-      log("afterPosition: " + JSON.stringify(this.position));
-      log("AfterCollide: " + JSON.stringify(movement));
-
-      if (!collision.normal.equals(Vector2.zero()) && collision.collider !== null) {
-        log("Add Collision");
-        this.lastSlideCollisions.push(collision);
-        excludeList.push(collision.collider);
-        slidesLeft--;
-      } else {
-        return;
-      }
-
-      collision = physics.checkCollisions(this, movement, excludeList, dt);
-    }
-
-    log("FinalMovement: " + JSON.stringify(movement));
-    this.position = this.position.add(movement.multiply(dt));
-    log("Final position: " + JSON.stringify(this.position));
-    log("result: " + JSON.stringify(this.position));
-    log("slidesLeft: " + slidesLeft);
+  public setVelocity(newVelocity: Vector2): void {
+    this.velocity = newVelocity;
   }
 
   isOnGround(upDirection: Vector2): boolean {
-    log("Looking in last slides: " + this.lastSlideCollisions.length);
-    for (let i = 0; i < this.lastSlideCollisions.length; i++) {
-      if (this.lastSlideCollisions[i].normal.equals(upDirection)) return true;
-    }
-
-    return false;
+    log("Looking in last slides: " + this.lastFrameCollisions.length);
+    return this.lastFrameCollisions.some((collision: CollisionData) => {
+      const isColliderA = collision.colliderA === this;
+      const collisionNormal = isColliderA ? collision.normal : collision.normal.multiply(-1);
+      return collisionNormal.equals(upDirection);
+    });
   }
 
   getGroundPlatform(upDirection: Vector2): RigidBody | null {
-    log("getting ground platform in length ", this.lastSlideCollisions.length);
+    log("getting ground platform in length ", this.lastFrameCollisions.length);
 
-    for (let i = 0; i < this.lastSlideCollisions.length; i++) {
-      if (this.lastSlideCollisions[i].normal.equals(upDirection))
-        return this.lastSlideCollisions[i].collider;
+    for (let i = 0; i < this.lastFrameCollisions.length; i++) {
+      const collision = this.lastFrameCollisions[i];
+      const isColliderA = collision.colliderA === this;
+      const collisionNormal = isColliderA ? collision.normal : collision.normal.multiply(-1);
+
+      if (collisionNormal.equals(upDirection)) {
+        if (isColliderA) {
+          return collision.colliderB !== undefined ? collision.colliderB : null;
+        } else {
+          return collision.colliderA;
+        }
+      }
     }
 
     return null;

@@ -117,8 +117,15 @@ export class Vector2 {
    * @param {number} n The scalar value to multiply both components by
    * @returns The resulting vector.
    */
-  multiply(n: number) {
-    return new Vector2(this.x * n, this.y * n);
+  multiply(n: number): Vector2;
+  multiply(vec: Vector2): Vector2;
+
+  multiply(n: number | Vector2) {
+    if (n instanceof Vector2) {
+      return new Vector2(this.x * n.x, this.y * n.y);
+    } else {
+      return new Vector2(this.x * n, this.y * n);
+    }
   }
 
   /**
@@ -128,6 +135,29 @@ export class Vector2 {
    */
   divide(n: number) {
     return new Vector2(this.x / n, this.y / n);
+  }
+
+  abs(): Vector2 {
+    return new Vector2(Math.abs(this.x), Math.abs(this.y));
+  }
+
+  mod(n: number): Vector2 {
+    return new Vector2(this.x % n, this.y % n);
+  }
+
+  swapComponents(): Vector2 {
+    return new Vector2(this.y, this.x);
+  }
+
+  normalize(): Vector2 {
+    let length = this.x * this.x + this.y * this.y;
+    if (length > 0) {
+      length = Math.sqrt(length);
+      const inverseLength = 1.0 / length;
+      return new Vector2(this.x * inverseLength, this.y * inverseLength);
+    } else {
+      return new Vector2(1, 0);
+    }
   }
 
   /**

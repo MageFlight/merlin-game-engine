@@ -145,4 +145,8 @@ export class Sprite extends GameObject {
     }
     return this.position.clone();
   }
+
+  setGlobalPos(newPosition: Vector2): void {
+    this.position = this.position.add(newPosition.subtract(this.getGlobalPos()));
+  }
 }
