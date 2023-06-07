@@ -33,7 +33,7 @@ export class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(64, 384), true, "toggle1Collider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(64, 384), "#f5a442", "toggle1Texture")),
 
-      new SquarePlayer(new Vector2(128, 128), "squarePlayer")
+      new SquarePlayer(new Vector2(128, Utils.GAME_HEIGHT - 256), "squarePlayer")
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "squareCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "#00ffff", "squareTexture")),
 
@@ -357,7 +357,7 @@ class Player extends KinematicBody {
   private horizontalDirection: number = 0;
 
   constructor() {
-    super(new Vector2(128, 128), new Vector2(128, 128), 0b1, 0b1, Vector2.zero(), true, 0.8, "player");
+    super(new Vector2(128, Utils.GAME_HEIGHT - 384), new Vector2(128, 128), 0b1, 0b1, Vector2.zero(), true, 0.8, "player");
   }
 
   override update(dt: number) {
