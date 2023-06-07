@@ -257,7 +257,7 @@ export class PhysicsEngine {
 
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider B on the other.
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderBFinalPosition, colliderBCollidingShape.getSize(), colliderACollidingShape.getSize(), collision.normal));
-    const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask).add(colliderBFinalVelocity);
+    const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask).add(colliderBFinalVelocity.multiply(collision.normal.abs()));
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
@@ -273,7 +273,7 @@ export class PhysicsEngine {
     const positionMask = collision.normal.swapComponents().abs();
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider A on the other.
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderAFinalPosition, colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal.multiply(-1)));
-    const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask).add(colliderA.getVelocity());    
+    const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask).add(colliderA.getVelocity().multiply(collision.normal.abs()));    
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
