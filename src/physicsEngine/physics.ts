@@ -201,18 +201,16 @@ export class PhysicsEngine {
     this.interactRegions();
   }
 
-  private getEdgePosition(colliderA: RigidBody, colliderB: RigidBody, normal: Vector2): Vector2 {
+  private getEdgePosition(colliderAPosition: Vector2, colliderASize: Vector2, colliderBSize: Vector2, normal: Vector2): Vector2 {
     const mask = normal.abs();
 
-    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
-    const colliderAHalfSize = colliderACollidingShape.getSize().multiply(0.5);
-    const colliderAMidPosition = colliderACollidingShape.getGlobalPos().add(colliderAHalfSize);
+    const colliderAHalfSize = colliderASize.multiply(0.5);
+    const colliderAMidPosition = colliderAPosition.add(colliderAHalfSize);
 
-    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
-    const colliderBHalfSize = colliderBCollidingShape.getSize().multiply(0.5);
+    const colliderBHalfSize = colliderBSize.multiply(0.5);
 
     internalLog("Get edge position.");
-    internalLog("ColliderA: ", colliderA.getName(), " ColliderB: ", colliderB.getName());
+    internalLog("ColliderAPosition: ", colliderAPosition, " ColliderASize ", colliderASize, " colliderBSize: ", colliderBSize);
     internalLog("Normal: ", normal);
     internalLog("ColliderAHalfSize: ", colliderAHalfSize, " ColliderAMidPosition: ", colliderAMidPosition);
     internalLog("ColliderBHalfSize: ", colliderBHalfSize);
@@ -224,21 +222,26 @@ export class PhysicsEngine {
 
   private resolvePushableVsPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
     const positionMask = collision.normal.swapComponents().abs();
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
     
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(collision.position.multiply(collision.normal.abs()));
     const colliderAFinalVelocity = colliderB.getVelocity().clone();
 
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider A on the other.
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal));
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderAFinalPosition, colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal));
     const colliderBFinalVelocity = colliderA.getVelocity().clone();
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolvePushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody, collision: CollisionData, dt: number): CollisionResolutionData {
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
+
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider B on the other.
     const positionMask = collision.normal.swapComponents().abs();
-    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderB, colliderA, collision.normal));
+    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderBCollidingShape.getGlobalPos(), colliderBCollidingShape.getSize(), colliderACollidingShape.getSize(), collision.normal));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
@@ -246,33 +249,41 @@ export class PhysicsEngine {
 
   private resolvePushableVsUnpushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
     const positionMask = collision.normal.swapComponents().abs();
-    // Move by its velocity along the non-colliding axis, snap to the edge position of collider B on the other.
-    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderB, colliderA, collision.normal));
-    const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
-    
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
+
     const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt));
     const colliderBFinalVelocity = colliderB.getVelocity();
+
+    // Move by its velocity along the non-colliding axis, snap to the edge position of collider B on the other.
+    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderBFinalPosition, colliderBCollidingShape.getSize(), colliderACollidingShape.getSize(), collision.normal));
+    const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask).add(colliderBFinalVelocity);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolveUnpushableVsPushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
     // Resolving pushable v unpushable and unpushable v pushable are the same thing, except colliderA and colliderB are swapped.
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
+    
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt));
     const colliderAFinalVelocity = colliderA.getVelocity();
 
     const positionMask = collision.normal.swapComponents().abs();
     // Move by its velocity along the non-colliding axis, snap to the edge position of collider A on the other.
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal.multiply(-1)));
-    const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);    
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderAFinalPosition, colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal.multiply(-1)));
+    const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask).add(colliderA.getVelocity());    
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
   }
 
   private resolveUnpushableVsStatic(colliderA: KinematicBody, colliderB: StaticBody, collision: CollisionData, dt: number): CollisionResolutionData {
     const positionMask = collision.normal.swapComponents().abs();
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
   
-    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderB, colliderA, collision.normal));
+    const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderBCollidingShape.getGlobalPos(), colliderBCollidingShape.getSize(), colliderACollidingShape.getSize(), collision.normal));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB);
@@ -280,11 +291,13 @@ export class PhysicsEngine {
 
   private resolveUnpushableVsUnpushable(colliderA: KinematicBody, colliderB: KinematicBody, collision: CollisionData, dt: number): CollisionResolutionData {
     const positionMask = collision.normal.swapComponents().abs();
+    const colliderACollidingShape = colliderA.getChildrenType<AABB>(AABB)[0];
+    const colliderBCollidingShape = colliderB.getChildrenType<AABB>(AABB)[0];
 
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(collision.position.multiply(collision.normal.abs()));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderA, colliderB, collision.normal.multiply(-1)));
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderAFinalPosition, colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal.multiply(-1)));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);

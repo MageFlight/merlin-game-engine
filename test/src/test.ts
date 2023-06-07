@@ -37,13 +37,17 @@ export class TestGame extends GameState {
         .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "squareCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "#00ffff", "squareTexture")),
 
-      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0b10, 0b1, 0.8, "wall")
+      new StaticBody(new Vector2(640, 600), new Vector2(192, 320), 0b1, 0b1, 0.8, "wall")
         .addChild(new AABB(Vector2.zero(), new Vector2(192, 320), true, "wallCollider"))
         .addChild(new ColorRect(Vector2.zero(), new Vector2(192, 320), "#ff0000", "wallTex")),
 
       new StaticBody(new Vector2(0, Utils.GAME_HEIGHT - 128), new Vector2(1280, 128), 0b1, 0b1, 0.8, "ground")
         .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "groundCollider"))
-        .addChild(new TextureRect(Vector2.zero(), new Vector2(1280, 128), ground, "groundTexture"))
+        .addChild(new TextureRect(Vector2.zero(), new Vector2(1280, 128), ground, "groundTexture")),
+      
+      new StaticBody(new Vector2(0, 0), new Vector2(512, 128), 0b1, 0b1, 0.8, "ceiling")
+        .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "ceilingCollider"))
+        .addChild(new ColorRect(Vector2.zero(), new Vector2(1280, 128), "#00ff00", "ceilingTexture"))
     ]);
   }
 

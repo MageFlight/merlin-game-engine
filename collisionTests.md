@@ -83,3 +83,7 @@ Swap velocities
 ## Static vs. Static
 
 Should never happen
+
+
+
+## The Collision resolutions don't work on the collider shape
