@@ -142,7 +142,7 @@ export class PhysicsEngine {
         collision.colliderB.logCollision(collision);
         
         colliderA.setGlobalPos(finalResolutionData.colliderAFinalPosition);
-        colliderA.setVelocity(finalResolutionData.colliderAFinalVelocity);
+        colliderA.setVelocity(Vector2.zero());
 
         internalLog("---===Checking for new Collision===---");
         collision = this.checkCollisions(colliderA, colliderA.getVelocity(), excludeList, bodyResolutions, dt);
@@ -650,7 +650,7 @@ export class PhysicsEngine {
       internalLog("expected position: ", new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY));
       const collision: CollisionData = {
         time: 0,
-        normal: new Vector2(0, signY),
+        normal: new Vector2(0, -signY),
         position: new Vector2(sprite0Pos.x, sprite0Pos.y - py * signY),
         colliderA: sprite0,
         colliderB: sprite1,
@@ -672,13 +672,14 @@ export class PhysicsEngine {
     const c1Pos = c1.getGlobalPos();
     const c2Pos = c2.getGlobalPos();
 
+    log("c1Pos: ", c1Pos, "c1Size: ", c1.getSize(), " c2Pos: ", c2Pos, " c2Size: ", c2.getSize())
     log("static axis 1: ", c1Pos.x + c1.getSize().x > c2Pos.x);
     log("static axis 2: ",  c1Pos.x < c2Pos.x + c2.getSize().x);
     log("static axis 3: ", c1Pos.y + c1.getSize().y > c2Pos.y);
     log("static axis 4: ", c1Pos.y < c2.getGlobalPos().y + c2.getSize().y);
     return (
       c1Pos.x + c1.getSize().x > c2Pos.x &&
-      c1Pos.x <= c2Pos.x + c2.getSize().x &&
+      c1Pos.x < c2Pos.x + c2.getSize().x &&
       c1Pos.y + c1.getSize().y > c2Pos.y &&
       c1Pos.y < c2.getGlobalPos().y + c2.getSize().y
     );
