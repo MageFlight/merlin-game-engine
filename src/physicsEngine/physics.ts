@@ -157,10 +157,35 @@ export class PhysicsEngine {
     internalLog("collisions:");
     for (const body of bodyResolutions.keys()) {
       if (!bodyResolutions.has(body)) continue;
-      const resolutions = bodyResolutions.get(body);
+      let resolutions = bodyResolutions.get(body);
       if (resolutions === undefined) continue;
       internalLog(body.getName());
       let collidedAxes = Vector2.one();
+      resolutions.sort((resolutionA: CollisionResolutionData, resolutionB: CollisionResolutionData) => {
+        const getColliderType = (collider: RigidBody | undefined) => {
+          if (collider === undefined) return 0;
+          if (collider instanceof StaticBody) return 1;
+          if (collider instanceof KinematicBody && !collider.isPushable()) return 2;
+          if (collider instanceof KinematicBody && collider.isPushable()) return 3;
+          return 4;
+        }
+
+        const otherColliderA = resolutionA.colliderA !== body ? resolutionA.colliderA : resolutionA.colliderB;
+        const otherColliderB = resolutionB.colliderA !== body ? resolutionB.colliderA : resolutionB.colliderB;
+   
+        const colliderAType = getColliderType(otherColliderA);
+        const colliderBType = getColliderType(otherColliderB);
+        internalLog("colliderAType: ", colliderAType);
+        internalLog("colliderBType: ", colliderBType);
+        if (colliderAType != colliderBType) {
+          return colliderAType < colliderBType ? -1 : 1;
+        }
+  
+        const collisionATime = resolutionA.collision !== null ? resolutionA.collision.time : 1;
+        const collisionBTime = resolutionB.collision !== null ? resolutionB.collision.time : 1;
+        if (collisionATime == collisionBTime) return 0;
+        return collisionATime < collisionBTime ? -1 : 1;
+      });
 
       for (const resolution of resolutions) {
         if (!(body instanceof KinematicBody)) continue;
