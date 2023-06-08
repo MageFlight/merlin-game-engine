@@ -297,7 +297,7 @@ export class PhysicsEngine {
     const colliderAFinalPosition = colliderA.getGlobalPos().add(colliderA.getVelocity().multiply(dt)).multiply(positionMask).add(collision.position.multiply(collision.normal.abs()));
     const colliderAFinalVelocity = colliderA.getVelocity().multiply(positionMask);
 
-    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderAFinalPosition, colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal.multiply(-1)));
+    const colliderBFinalPosition = colliderB.getGlobalPos().add(colliderB.getVelocity().multiply(dt)).multiply(positionMask).add(this.getEdgePosition(colliderACollidingShape.getGlobalPos(), colliderACollidingShape.getSize(), colliderBCollidingShape.getSize(), collision.normal.multiply(-1)));
     const colliderBFinalVelocity = colliderB.getVelocity().multiply(positionMask);
 
     return new CollisionResolutionData(collision, colliderA, colliderAFinalPosition, colliderAFinalVelocity, colliderB, colliderBFinalPosition, colliderBFinalVelocity);
@@ -435,6 +435,23 @@ export class PhysicsEngine {
     }
   }
 
+  private getBroadBox(sprite: RigidBody, velocity: Vector2, dt: number): AABB {
+    const collider = sprite.getChildrenType<AABB>(AABB)[0];
+    const globalPos = collider.getGlobalPos();
+    const size = collider.getSize();
+
+    const broadBoxPosition = new Vector2(
+      velocity.x > 0 ? globalPos.x : globalPos.x + velocity.x * dt,
+      velocity.y > 0 ? globalPos.y : globalPos.y + velocity.y * dt
+    );
+    const broadBoxSize = new Vector2(
+      velocity.x > 0 ? velocity.x * dt + size.x : size.x - velocity.x * dt,
+      velocity.y > 0 ? velocity.y * dt + size.y : size.y - velocity.y * dt
+    );
+
+    return new AABB(broadBoxPosition, broadBoxSize, true, `${sprite.getName()}BroadBox`);
+  }
+
   /**
    * Checks for any collisions between physics-recognised sprites and the provided sprite.
    * @param {RigidBody} sprite Sprite to check collision for
@@ -446,24 +463,7 @@ export class PhysicsEngine {
   checkCollisions(sprite: RigidBody, velocity: Vector2, spriteExcludeList: CollisionObject[], bodyResolutions: Map<RigidBody, CollisionResolutionData[]>, dt: number): CollisionData | null {
     const spriteGlobalPos = sprite.getChildrenType<AABB>(AABB)[0].getGlobalPos();
 
-    let broadBox = new AABB(
-      new Vector2(
-        velocity.x > 0
-          ? spriteGlobalPos.x
-          : spriteGlobalPos.x + velocity.x * dt,
-        velocity.y > 0 ? spriteGlobalPos.y : spriteGlobalPos.y + velocity.y * dt
-      ),
-      new Vector2(
-        velocity.x > 0
-          ? velocity.x * dt + sprite.getSize().x
-          : sprite.getSize().x - velocity.x * dt,
-        velocity.y > 0
-          ? velocity.y * dt + sprite.getSize().y
-          : sprite.getSize().y - velocity.y * dt
-      ),
-      true,
-      "broadBox"
-    );
+    let broadBox = this.getBroadBox(sprite, velocity, dt);
     internalLog("vel: " + JSON.stringify(velocity) + " dt: " + dt);
     internalLog("bBox size: " + JSON.stringify(broadBox.getSize()));
     internalLog("bBox pos: " + JSON.stringify(broadBox.getPosition()));
@@ -480,19 +480,23 @@ export class PhysicsEngine {
       const sprCollider = spr.getChildrenType<AABB>(AABB)[0];
       const spriteCollider = sprite.getChildrenType<AABB>(AABB)[0];
 
+      const sprVelocity = spr instanceof KinematicBody ? spr.getVelocity() : Vector2.zero();
+      const sprBroadBox = this.getBroadBox(spr, sprVelocity, dt);
       internalLog("spr: ", spr.getName(), " sprite: ", sprite.getName());
       internalLog("spriteColliderName: ", spriteCollider.getName());
       internalLog("sprColliderVisible: ", sprCollider.isVisible(), " SpriteColliderVisible: ", spriteCollider.isVisible());
       internalLog("sprCollisionLayer: ", spr.getCollisionLayer(), " sprCollisionMask: ", spr.getCollisionMask());
       internalLog("spriteCollisionLayer: ", sprite.getCollisionLayer(), " spriteCollisionMask: ", sprite.getCollisionMask());
       internalLog("Spr & Sprite: ", spr.getCollisionLayer() & sprite.getCollisionMask(), " Sprite & spr: ", sprite.getCollisionLayer() & spr.getCollisionMask());
+      internalLog("sprBroadBox: ", sprBroadBox);
+      internalLog("broadBoxIntersect: ", PhysicsEngine.staticAABB(broadBox, sprBroadBox));
       if (
         spr != sprite &&
         spriteExcludeList.indexOf(spr) == -1 &&
         (previousCollision === undefined || alreadyCollided === undefined) &&
         (sprCollider.isVisible() && spriteCollider.isVisible()) &&
         (spr.getCollisionLayer() & sprite.getCollisionMask() || sprite.getCollisionLayer() & spr.getCollisionMask()) &&
-        PhysicsEngine.staticAABB(broadBox, sprCollider)
+        PhysicsEngine.staticAABB(broadBox, sprBroadBox)
       ) {
         possibleSprites.push(spr);
       }
@@ -668,9 +672,13 @@ export class PhysicsEngine {
     const c1Pos = c1.getGlobalPos();
     const c2Pos = c2.getGlobalPos();
 
+    log("static axis 1: ", c1Pos.x + c1.getSize().x > c2Pos.x);
+    log("static axis 2: ",  c1Pos.x < c2Pos.x + c2.getSize().x);
+    log("static axis 3: ", c1Pos.y + c1.getSize().y > c2Pos.y);
+    log("static axis 4: ", c1Pos.y < c2.getGlobalPos().y + c2.getSize().y);
     return (
       c1Pos.x + c1.getSize().x > c2Pos.x &&
-      c1Pos.x < c2Pos.x + c2.getSize().x &&
+      c1Pos.x <= c2Pos.x + c2.getSize().x &&
       c1Pos.y + c1.getSize().y > c2Pos.y &&
       c1Pos.y < c2.getGlobalPos().y + c2.getSize().y
     );
