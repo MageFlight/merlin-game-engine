@@ -83,3 +83,19 @@ Swap velocities
 ## Static vs. Static
 
 Should never happen
+
+
+
+## Detecting colliderB pushing colliderA along the same direction
+
+### Problem
+
+ColliderA is moving right with a velocity of 0.1. ColliderB, located to the left of ColliderA, is moving right with a velocity of 0.5. ColliderA doesn't know that ColliderB will collide with it.
+
+### Solution
+
+To get colliderA to know that ColliderB will collide with it, add another check to the broad phase check. Calculate the broadboxes for all of the kinematicBodies. If colliderB's broad box intersects with colliderA's broad box, then add Collider B to the list of possible sprites.
+
+
+
+Instead of skipping a collision if it happened at all during the frame, skip it if it happened as the last collision.
