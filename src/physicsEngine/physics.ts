@@ -168,7 +168,7 @@ export class PhysicsEngine {
           bodyResolutions.set(colliderB, []);
         }
         bodyResolutions.get(colliderB)?.push(collision);
-        
+
         collidedBodies.set(colliderA, colliderB);
       }
     }
@@ -487,6 +487,8 @@ export class PhysicsEngine {
     const globalPos = collider.getGlobalPos();
     const size = collider.getSize();
 
+    internalLog("GetBroadBox sprite: ", sprite.getName(), " pos: ", globalPos, " size: ", size, " velocity: ", velocity, " dt: ", dt);
+
     const broadBoxPosition = new Vector2(
       velocity.x > 0 ? globalPos.x : globalPos.x + velocity.x * dt,
       velocity.y > 0 ? globalPos.y : globalPos.y + velocity.y * dt
@@ -495,6 +497,8 @@ export class PhysicsEngine {
       velocity.x > 0 ? velocity.x * dt + size.x : size.x - velocity.x * dt,
       velocity.y > 0 ? velocity.y * dt + size.y : size.y - velocity.y * dt
     );
+
+    internalLog("Broadbox Position: ", broadBoxPosition, " BroadboxSize: ", broadBoxSize);
 
     return new AABB(broadBoxPosition, broadBoxSize, true, `${sprite.getName()}BroadBox`);
   }
@@ -755,6 +759,10 @@ export class PhysicsEngine {
     internalLog("c0 globalPos: ", collider.getGlobalPos());
     internalLog("b2HalfSize: ", c0HalfSize, " b2MiddlePos: ", c0MiddlePos);
 
+    // if (Math.sign(c0MiddlePos.x - rayStart.x) === Math.sign(rayDelta.x) || Math.sign(c0MiddlePos.y - rayStart.y) === Math.sign(rayDelta.y)) { // If the ray is pointing away from c0, then it can't collide.
+    //   return null;
+    // }
+
     const nearTime = new Vector2((c0MiddlePos.x - signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y - signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
     const farTime = new Vector2((c0MiddlePos.x + signX * (c0HalfSize.x + padding.x) - rayStart.x) * scaleX, (c0MiddlePos.y + signY * (c0HalfSize.y + padding.y) - rayStart.y) * scaleY);
     
@@ -765,8 +773,8 @@ export class PhysicsEngine {
       return null;
     }
 
-    const finalNearTime = Math.min(rayDelta.x == 0 ? Infinity : nearTime.x, rayDelta.y == 0 ? Infinity : nearTime.y);
-    const finalFarTime = Math.max(rayDelta.x == 0 ? -Infinity : farTime.x, rayDelta.y == 0 ? -Infinity : farTime.y);
+    const finalNearTime = Math.max(rayDelta.x == 0 ? -Infinity : nearTime.x, rayDelta.y == 0 ? -Infinity : nearTime.y);
+    const finalFarTime = Math.min(rayDelta.x == 0 ? Infinity : farTime.x, rayDelta.y == 0 ? Infinity : farTime.y);
 
     internalLog("finalNearTime: ", finalNearTime, " finalFarTime: ", finalFarTime);
 
@@ -780,9 +788,9 @@ export class PhysicsEngine {
     internalLog("nearTime.x > nearTime.y: ", nearTime.x > nearTime.y);
 
     if (nearTime.x > nearTime.y) {
-      collisionNormal = new Vector2(-signX, 0);
+      collisionNormal = new Vector2(rayStart.x - c0MiddlePos.x !== 0 ? Math.sign(rayStart.x - c0MiddlePos.x) : 1, 0);
     } else {
-      collisionNormal = new Vector2(0, -signY);
+      collisionNormal = new Vector2(0, rayStart.y - c0MiddlePos.y !== 0 ? Math.sign(rayStart.y - c0MiddlePos.y) : 1);
     }
 
     internalLog("collisionNormal1: ", collisionNormal);

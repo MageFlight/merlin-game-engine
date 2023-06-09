@@ -160,6 +160,10 @@ export class Vector2 {
     }
   }
 
+  sign(): Vector2 {
+    return new Vector2(Math.sign(this.x), Math.sign(this.y));
+  }
+
   /**
    * Creates a clone of this vector
    * @returns The clone of this vector
