@@ -172,6 +172,14 @@ export class Vector2 {
     return new Vector2(this.x, this.y);
   }
 
+  length(): number {
+    return Math.sqrt((this.x * this.x) + (this.y * this.y));
+  }
+
+  lengthSquared(): number {
+    return (this.x * this.x) + (this.y * this.y);
+  }
+
   /**
    * Checks if this vector is equal to another vector.
    * @param {Vector2} vector2 The vector to be compared to.
