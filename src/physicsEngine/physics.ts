@@ -505,7 +505,9 @@ export class PhysicsEngine {
 
       for (let x = 0; x < allBodies.length; x++) {
         const sprite2 = allBodies[x];
-        if (region != sprite2) region.interactWithRegion(sprite2);
+        if (region === sprite2) continue;
+        region.interactWithRegion(sprite2);
+        sprite2.interactWithRegion(region);
       }
     }
   }
