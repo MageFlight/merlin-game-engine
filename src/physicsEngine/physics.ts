@@ -84,8 +84,8 @@ export class PhysicsEngine {
         internalLog("Velocity: ", colliderA.getVelocity());
         internalLog("StartPosition: ", colliderA.getGlobalPos());
         if (bodyResolutions.has(colliderA) && bodyResolutions.get(colliderA)?.length !== 0) {
-          log("AlreadyCollided");
-          log("CollisionsLength: ", bodyResolutions.get(colliderA)?.length);
+          internalLog("AlreadyCollided");
+          internalLog("CollisionsLength: ", bodyResolutions.get(colliderA)?.length);
           continue;
         } 
         if (!bodyResolutions.has(colliderA)) bodyResolutions.set(colliderA, []);
@@ -109,13 +109,13 @@ export class PhysicsEngine {
         
         if (collision.colliderA instanceof KinematicBody && ((collision.colliderB instanceof KinematicBody && collision.colliderB.isPushable()) || collision.colliderB instanceof StaticBody)) {
           const currentUnpushableState = specialUnpushables.get(collision.colliderA);
-          log("currentUnpushableState for ", collision.colliderA.getName(), ": ", currentUnpushableState);
+          internalLog("currentUnpushableState for ", collision.colliderA.getName(), ": ", currentUnpushableState);
           if (currentUnpushableState === undefined) {
             specialUnpushables.set(collision.colliderA, collision.normal);
           } else {
             specialUnpushables.set(collision.colliderA, currentUnpushableState.add(collision.normal));
           }
-          log("finalUnpushableState for ", collision.colliderA.getName(), ": ", specialUnpushables.get(collision.colliderA));
+          internalLog("finalUnpushableState for ", collision.colliderA.getName(), ": ", specialUnpushables.get(collision.colliderA));
         }
         
         // Set the start positions
