@@ -80,12 +80,10 @@ export class Region extends CollisionObject {
       // If inside, but wasn't last frame
       this.regionsInside.push(region);
       this.onRegionEnter(region);
-      region.onRegionEnter(this);
     } else if (!intersecting && containsRegion) {
       // If not inside, but was last frame
       this.regionsInside.splice(this.regionsInside.indexOf(region), 1);
       this.onRegionExit(region);
-      region.onRegionExit(this);
     }
   }
 

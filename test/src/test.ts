@@ -1,6 +1,6 @@
 import { TextureRect, ColorRect } from "../../src/gameObjects/cameraObjects";
 import { GameObjectTree } from "../../src/gameObjects/gameObjectTree";
-import { AABB, StaticBody, KinematicBody, RigidBody } from "../../src/gameObjects/physicsObjects";
+import { AABB, StaticBody, KinematicBody, RigidBody, Region } from "../../src/gameObjects/physicsObjects";
 import { GameState } from "../../src/gameState";
 import { log, keyboardHandler } from "../../src/index";
 import { Vector2 } from "../../src/math/vector2";
@@ -47,7 +47,11 @@ export class TestGame extends GameState {
       
       new StaticBody(new Vector2(0, 0), new Vector2(512, 128), 0b1, 0b1, 0.8, "ceiling")
         .addChild(new AABB(Vector2.zero(), new Vector2(1280, 128), true, "ceilingCollider"))
-        .addChild(new ColorRect(Vector2.zero(), new Vector2(1280, 128), "#00ff00", "ceilingTexture"))
+        .addChild(new ColorRect(Vector2.zero(), new Vector2(1280, 128), "#00ff00", "ceilingTexture")),
+
+      new TestingRegion(new Vector2(512, Utils.GAME_HEIGHT - 256), new Vector2(128, 128), "region1")
+        .addChild(new AABB(Vector2.zero(), new Vector2(128, 128), true, "region1Collider"))
+        .addChild(new ColorRect(Vector2.zero(), new Vector2(128, 128), "purple", "region1Texture")),
     ]);
   }
 
@@ -57,6 +61,18 @@ export class TestGame extends GameState {
 
   override draw() {
     this.objectTree.draw();
+  }
+}
+
+class TestingRegion extends Region {
+  constructor(position: Vector2, size: Vector2, name: string) {
+    super(position, size, 0b1, 0b1, name);
+  }
+
+  override update(dt: number): void {
+    let regionsInsideNames: string[] = [];
+    this.regionsInside.forEach((region: Region) => regionsInsideNames.push(region.getName()));
+    log("RegionsInside: ", regionsInsideNames);
   }
 }
 
@@ -365,6 +381,7 @@ class Player extends KinematicBody {
   }
 
   override update(dt: number) {
+    log("playerRegionsInside: ", this.regionsInside.map((region: Region) => region.getName()));
     const pressLeft: boolean = keyboardHandler.isKeyDown("KeyA");
     const pressRight: boolean = keyboardHandler.isKeyDown("KeyD");
     if (pressLeft == pressRight) {
